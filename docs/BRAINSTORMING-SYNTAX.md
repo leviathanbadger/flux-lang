@@ -116,7 +116,15 @@ TODO: Brainstorm syntax for defining and invoking macros.
 ## 23. Handling Errors
 Result and Option types may exist with pattern matching. Refinements can express that a function never returns an error in certain cases.
 
-TODO: Brainstorm syntax for error handling constructs.
+Possible syntaxes for dealing with errors might include:
+* A `Result<T, E>` type baked into the standard library with pattern matching on
+  `Ok(value)` and `Err(e)` variants.
+* A `try { ... }` block paired with the `?` operator to propagate failures
+  directly from expressions.
+* Stream-aware combinators like `on_error(stream, handler)` that route error
+  values on a reactive channel to a recovery function.
+* Function contracts such as `fn foo() -> !Error` to indicate, via refinement,
+  that a call cannot fail under proven preconditions.
 
 ## 24. Resource Management
 Linear types help ensure resources like streams are consumed correctly. The design might borrow from Rust's ownership model.
