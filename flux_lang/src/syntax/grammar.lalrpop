@@ -1,0 +1,9 @@
+// Minimal grammar for FluxLang
+
+extern crate lalrpop_util;
+
+use crate::syntax::ast::Program;
+
+pub Program: Program = {
+    <_:#"[a-zA-Z]*"> => Program,
+};
