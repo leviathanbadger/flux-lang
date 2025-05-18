@@ -41,7 +41,12 @@ TODO: Brainstorm syntax for `for item in collection` style loops.
 ## 7. Defining a Function
 Functions may include dependent or refinement type signatures and possibly temporal effects. The plan's plugin system could allow custom annotations here.
 
-TODO: Brainstorm syntax for function definitions with typed parameters and return types.
+Possible syntaxes for function definitions might include:
+* `fn add(x: Int, y: Int) -> Int { x + y }` a straightforward signature with explicit argument and return types.
+* `fn add_pos(x: Int [x >= 0], y: Int [y >= 0]) -> Int [result >= 0] { ... }` showing refinement predicates verified by Z3.
+* `async fn fetch(url: String) -> Stream<Response>` illustrating an asynchronous function returning a reactive stream.
+* `fn compute<T: Numeric>(val: T) -> T where [val > 0]` combining generics with refinement constraints.
+* `#[temporal(after = tick)] fn step(time: Time) -> Output @ (time + 1) { ... }` annotating temporal behavior via attributes usable by plugins.
 
 ## 8. Invoking a Function
 Call syntax should be familiar yet support proof obligations for refinements. The compiler might generate solver queries based on argument types.
