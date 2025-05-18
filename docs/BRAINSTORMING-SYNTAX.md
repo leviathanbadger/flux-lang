@@ -1,0 +1,131 @@
+# FluxLang Syntax Brainstorming
+
+This document lists a set of everyday programming tasks and considers how FluxLang's key technologies might shape their design. Each section will later be expanded with possible syntax ideas.
+
+
+## 1. Logging to the Console
+FluxLang will likely provide a standard library function to output text. Given the project's plan to leverage Rust ecosystems and LLVM for codegen, this might wrap Rust's `println!` or a runtime call. Reactive streams could allow log statements to be triggered by events.
+
+TODO: Brainstorm syntax for printing values.
+
+## 2. Declaring a Variable
+Variables may carry refinement or temporal annotations. The language might infer types similar to Rust, but also allow specifying refinements checked by Z3.
+
+TODO: Brainstorm syntax for variable declarations with optional type and refinement.
+
+## 3. Assigning to a Variable
+Assignments must respect linear usage of temporal streams if involved. Basic mutable variables might behave like Rust's `let mut`.
+
+TODO: Brainstorm syntax for mutation and reassignment.
+
+## 4. Conditional Execution
+An `if` expression must be compatible with refinement types, ensuring branches satisfy constraints. Temporal logic might gate conditions based on event phases.
+
+TODO: Brainstorm syntax for `if`/`else` constructs.
+
+## 5. Looping Over a Range
+Loops can interact with reactive streams or linear types. The design should ensure iteration variables respect borrow-like rules.
+
+TODO: Brainstorm syntax for numeric `for` loops.
+
+## 6. Iterating Through a Collection
+Similar to ranges but using collection APIs. Type inference should work with generics and refinement annotations on elements.
+
+TODO: Brainstorm syntax for `for item in collection` style loops.
+
+## 7. Defining a Function
+Functions may include dependent or refinement type signatures and possibly temporal effects. The plan's plugin system could allow custom annotations here.
+
+TODO: Brainstorm syntax for function definitions with typed parameters and return types.
+
+## 8. Invoking a Function
+Call syntax should be familiar yet support proof obligations for refinements. The compiler might generate solver queries based on argument types.
+
+TODO: Brainstorm syntax for function calls and generics.
+
+## 9. Pattern Matching
+A match expression can destructure enums or stream events. Refinement types might refine matched variants.
+
+TODO: Brainstorm syntax for pattern matching.
+
+## 10. Declaring a Struct
+Structs can carry field refinements and may be used in macros. Their definitions will inform the AST structure defined via LALRPOP.
+
+TODO: Brainstorm syntax for struct definitions.
+
+## 11. Instantiating a Struct
+Constructors may validate refinements at compile time. Temporal types might restrict when certain fields are valid.
+
+TODO: Brainstorm syntax for creating struct values.
+
+## 12. Accessing Struct Fields
+Field access should be straightforward but also track temporal usage if fields are streams.
+
+TODO: Brainstorm syntax for field reads and writes.
+
+## 13. Declaring an Enum
+Enums allow sum types. Refinements could constrain which variants appear in certain contexts.
+
+TODO: Brainstorm syntax for enum definitions.
+
+## 14. Matching on an Enum
+Matching must exhaustively handle variants, and temporal rules might require handling of end-of-stream cases.
+
+TODO: Brainstorm syntax for enum pattern matching.
+
+## 15. Using Generics
+Generics interact with the type system's refinements and linearity. Z3 may check generic constraints.
+
+TODO: Brainstorm syntax for generic type parameters.
+
+## 16. Creating a Reactive Stream
+Core to FluxLang, streams will carry temporal and linear type information. Integration with petgraph IR will model stream graphs.
+
+TODO: Brainstorm syntax for declaring and producing streams.
+
+## 17. Subscribing to Stream Events
+Consumers of streams must respect temporal sequencing. The compiler might enforce that subscribers handle events in order.
+
+TODO: Brainstorm syntax for listening to streams.
+
+## 18. Composing Streams
+Operators like map, filter, and merge will use the reactive runtime and may rely on macros for concise expression.
+
+TODO: Brainstorm syntax for stream combinators.
+
+## 19. Using Refinement Types
+Values can be annotated with logical predicates verified by Z3. Design should make predicates readable but concise.
+
+TODO: Brainstorm syntax for refinement annotations on variables and functions.
+
+## 20. Using Temporal Types
+Temporal annotations specify when values or streams are valid. This intersects with linear usage tracking.
+
+TODO: Brainstorm syntax for temporal qualifiers.
+
+## 21. Importing Modules
+The module system will integrate with the parser and CLI. Plugins might extend import behavior.
+
+TODO: Brainstorm syntax for module imports and exports.
+
+## 22. Using Macros
+Macros allow hygienic code generation. They must work well with the LALRPOP-based parser and avoid interfering with refinements.
+
+TODO: Brainstorm syntax for defining and invoking macros.
+
+## 23. Handling Errors
+Result and Option types may exist with pattern matching. Refinements can express that a function never returns an error in certain cases.
+
+TODO: Brainstorm syntax for error handling constructs.
+
+## 24. Resource Management
+Linear types help ensure resources like streams are consumed correctly. The design might borrow from Rust's ownership model.
+
+TODO: Brainstorm syntax for defining and dropping resources.
+
+## 25. Concurrency and Tasks
+If FluxLang supports async tasks or threads, the interaction with reactive streams and temporal logic becomes important.
+
+TODO: Brainstorm syntax for spawning and managing concurrent tasks.
+
+
