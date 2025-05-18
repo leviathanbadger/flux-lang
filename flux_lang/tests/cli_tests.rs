@@ -4,7 +4,7 @@ use std::process::Command;
 fn runs_fluxc() {
     if let Ok(exe) = std::env::var("CARGO_BIN_EXE_fluxc") {
         let status = Command::new(exe)
-            .arg("input.flux")
+            .args(["compile", "examples/hello.flux"])
             .status()
             .expect("failed to run fluxc");
         assert!(status.success());
