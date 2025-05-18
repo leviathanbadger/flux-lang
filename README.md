@@ -54,6 +54,10 @@ pseudocode rather than actual, runnable programs.
 
 ## Detailed Project Plan
 
+For the complete roadmap and in-depth discussion of each phase, see
+[PROJECT-PLAN.md](PROJECT-PLAN.md). The outline below summarizes the
+high-level timeline.
+
 ### Phase 1: Language Specification (Weeks 1–4)
 - Draft the formal grammar in EBNF and outline core syntactic constructs.
 - Write a language report with motivating examples showcasing reactive streams and refinement types.
