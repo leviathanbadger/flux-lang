@@ -1,286 +1,272 @@
 # FluxLang Syntax Brainstorming
 
-This document lists a set of everyday programming tasks and considers how FluxLang's key technologies might shape their design. Each section will later be expanded with possible syntax ideas.
-
+This document lists common programming tasks and records the emerging syntax decisions for FluxLang.  Each section describes the preferred syntax along with short reasoning on why competing ideas were removed.
 
 ## 1. Logging to the Console
-FluxLang will likely provide a standard library function to output text. Given the project's plan to leverage Rust ecosystems and LLVM for codegen, this might wrap Rust's `println!` or a runtime call. Reactive streams could allow log statements to be triggered by events.
+FluxLang will provide a small standard library.  Logging will mirror Rust so that developers feel at home.
 
-Selected syntax ideas:
-* `print("hello")` – a conventional call into the standard library.
-* `log("value = {x}")` – keeps quoting rules uniform while allowing formatted output.
-* `debug!(x)` – macro form for debug‑only logging.
-* `emit log(x)` – treats the log as a stream event for reactive tooling.
-* `trace "msg"` – shorthand for very lightweight messages.
+**Syntax**
+```flux
+print("hello")
+log!("value = {}", x)
+```
 
-**Reasoning**: the original string‑literal form `log "value = {x}"` used implicit
-parentheses, which would complicate parsing. Converting it to a call form keeps
-syntax regular. A brief `trace` keyword is added to explore a terse logging
-alternative.
-
+**Reasoning**: a function call and a macro cover simple printing and formatted debugging without new keywords like `emit`.
 
 ## 2. Declaring a Variable
-Variables may carry refinement or temporal annotations. The language might infer types similar to Rust, but also allow specifying refinements checked by Z3.
+Variables can carry refinements and temporal qualifiers.  We keep the familiar `let` keyword and use a `where` clause for refinements.
 
-Selected syntax ideas:
-* `let count = 0` – inference handles the type.
-* `let id: Int = 42` – explicit type when desired.
-* `let mut limit: Int [limit > 0] = 10` – mutable with a refinement.
-* `let events: Stream<Event> @time` – temporal qualifier comes after the type for consistency.
-* `const PI: Float = 3.1415` – immutable compile‑time constant.
+**Syntax**
+```flux
+let count = 0
+let id: Int = 42
+let mut limit: Int where limit > 0 = 10
+let events@time: Stream<Event>
+```
 
-**Reasoning**: the placement of `@time` after the type mirrors how other annotations
-will be parsed and keeps identifiers uncluttered. A constant form is added to
-cover global values.
-
+**Reasoning**: aligns with Rust while introducing refinements in a readable `where` clause.
 
 ## 3. Assigning to a Variable
-Assignments must respect linear usage of temporal streams if involved. Basic mutable variables might behave like Rust's `let mut`.
+Assignments behave like Rust with optional temporal indexing for future states.
 
-Selected syntax ideas:
-* `count = count + 1` – basic assignment operator.
-* `count += 1` – shorthand for arithmetic updates.
-* `state@next := update(state)` – temporal update taking effect at the next tick.
+**Syntax**
+```flux
+count = count + 1
+count += 1
+state[next] = update(state)
+```
 
-**Reasoning**: the pipeline form `next_value -> result` clashes with conventional
-assignment and would introduce an additional operator solely for updates.
-Temporal assignment remains to illustrate delayed state changes.
-
+**Reasoning**: arrow based assignments conflicted with other uses of `->`; indexing with `[next]` keeps temporal updates explicit.
 
 ## 4. Conditional Execution
-An `if` expression must be compatible with refinement types, ensuring branches satisfy constraints. Temporal logic might gate conditions based on event phases.
+The traditional `if/else` form remains primary.  Temporal checks can be expressed with a `when` annotation.
 
-Selected syntax ideas:
-* `if cond { ... } else { ... }` – classic block form.
-* `when cond do { ... } else { ... }` – integrates temporal checks.
-* `if cond -> expr1 else expr2` – expression form without extra keywords.
-* `? cond { expr1 } : { expr2 }` – terse operator style for expressions.
+**Syntax**
+```flux
+if cond { ... } else { ... }
+when phase if cond { ... } else { ... }
+```
 
-**Reasoning**: the Racket‑style `cond` construct overlaps heavily with `match`
-and adds little benefit here, so it has been removed. The arrow clause variant
-was shortened to reduce verbosity while still providing an expression form.
+**Reasoning**: removes less common forms (`cond { ... }`, ternaries) to keep the language concise.
 
 ## 5. Looping Over a Range
-Loops can interact with reactive streams or linear types. The design should ensure iteration variables respect borrow-like rules.
+Numeric loops follow Rust's style and may attach refinements or temporal phases.
 
-Selected syntax ideas:
-* `for i in 0..n { ... }` – familiar Rust‑style range.
-* `for i: Int [0 <= i < n] in 0..n { ... }` – range with a refinement predicate.
-* `for t in 0..duration @cycle { ... }` – associates iteration with a temporal phase.
-* `for await i in timer(0..n) { ... }` – asynchronous loop over time events.
+**Syntax**
+```flux
+for i in 0..n { ... }
+for i in 0..n where 0 <= i { ... }
+for await i in timer(0..n) { ... }
+```
 
-**Reasoning**: the `repeat n times` macro form felt redundant given the normal
-`for` loop and would overlap with user‑defined macros. The remaining examples
-cover plain, refined, temporal, and async variations.
+**Reasoning**: standard `for` loops are clear and work well with refinements; plugin based `repeat` forms were dropped.
 
 ## 6. Iterating Through a Collection
-Similar to ranges but using collection APIs. Type inference should work with generics and refinement annotations on elements.
+Collection iteration mirrors range loops and supports method chaining if desired.
 
-Selected syntax ideas:
-* `for item in collection { ... }` – straightforward loop form.
-* `collection.each |item| { ... }` – method‑call style.
-* `for item <- collection do ...` – Haskell‑like comprehension.
+**Syntax**
+```flux
+for item in collection { ... }
+collection.each(|item| { ... })
+```
 
-**Reasoning**: the `foreach` and `loop item of` variants diverged significantly
-from the rest of the language style. Keeping the method call and comprehension
-forms demonstrates flexibility while staying readable.
+**Reasoning**: removes `foreach` and `loop item of` alternatives to avoid multiple keywords for the same concept.
 
 ## 7. Defining a Function
-Functions may include dependent or refinement type signatures and possibly temporal effects. The plan's plugin system could allow custom annotations here.
+Function definitions are Rust-like with optional refinement clauses and attributes for temporal behaviour.
 
-Possible syntaxes for function definitions might include:
-* `fn add(x: Int, y: Int) -> Int { x + y }` a straightforward signature with explicit argument and return types.
-* `fn add_pos(x: Int [x >= 0], y: Int [y >= 0]) -> Int [result >= 0] { ... }` showing refinement predicates verified by Z3.
-* `async fn fetch(url: String) -> Stream<Response>` illustrating an asynchronous function returning a reactive stream.
-* `fn compute<T: Numeric>(val: T) -> T where [val > 0]` combining generics with refinement constraints.
-* `#[temporal(after = tick)] fn step(time: Time) -> Output @ (time + 1) { ... }` annotating temporal behavior via attributes usable by plugins.
+**Syntax**
+```flux
+fn add(x: Int, y: Int) -> Int { x + y }
+fn add_pos(x: Int where x >= 0, y: Int where y >= 0) -> Int where result >= 0 { ... }
+async fn fetch(url: String) -> Stream<Response>
+fn compute<T: Numeric>(val: T) -> T where val > 0
+#[temporal(after = tick)] fn step(time: Time) -> Output @ (time + 1) { ... }
+```
+**Reasoning**: keeps one clear form for generics and refinements and relies on attributes for temporal semantics.
 
 ## 8. Invoking a Function
-Call syntax should be familiar yet support proof obligations for refinements. The compiler might generate solver queries based on argument types.
+Calls look familiar and support explicit generics and async/await.
 
-Possible syntaxes for function calls and generics might include:
-* `add(1, 2)` a direct call using inferred argument types.
-* `parse::<Int>("42")` showing an explicit generic parameter similar to Rust.
-* `await fetch(url)` invoking an async function that yields a stream of results.
-* `plugin::transform!(input)` leveraging the macro system for compile-time code generation.
-
+**Syntax**
+```flux
+add(1, 2)
+parse::<Int>("42")
+await fetch(url)
+plugin::transform!(input)
+```
+**Reasoning**: retains Rust call syntax and macro invocation; other alternatives added little value.
 
 ## 9. Pattern Matching
-A match expression can destructure enums or stream events. Refinement types might refine matched variants.
+Pattern matching follows Rust's `match` with optional guards.
 
-Possible syntaxes for pattern matching might include:
-* `match value { Some(x) => x, None => default }` mirroring Rust's familiar enum patterns.
-* `match event when event.tag == "click" { Click(x, y) => ... }` integrating guards that can leverage refinement predicates.
-* `on stream => match * { Data(d) => handle(d), Error(e) => log(e) }` combining reactive stream events with match arms.
-* `match { variant: V1[a], other } { V1(n) if n > 0 => ... }` allowing inline refinement filters on pattern variables.
-* `case value of { pattern => expr }` using a more ML-style keyword that could be macro-expanded by plugins.
+**Syntax**
+```flux
+match value { Some(x) => x, None => default }
+match event if event.tag == "click" { Click(x, y) => ... }
+```
+**Reasoning**: stream based `on` forms were removed to keep one clear construct; guards express refinement checks directly.
 
 ## 10. Declaring a Struct
-Structs can carry field refinements and may be used in macros. Their definitions will inform the AST structure defined via LALRPOP.
+Structs use a record syntax.  Refinements may appear on fields via `where`.
 
-Possible syntaxes for struct definitions might include:
-* `struct Point { x: Int, y: Int }` a conventional record style.
-* `record Point(x: Int, y: Int)` inspired by Kotlin or C# record declarations.
-* `type Point = { x: Int; y: Int }` borrowing from ML-family languages.
-* `data Point { x :: Int; y :: Int }` using a Haskell-like syntax.
-* `@refined struct Account { balance: Int [balance >= 0] }` demonstrating refinement annotations via attributes.
+**Syntax**
+```flux
+struct Point { x: Int, y: Int }
+struct Account { balance: Int where balance >= 0 }
+```
+**Reasoning**: record and data style alternatives were dropped to standardise on a single form.
 
 ## 11. Instantiating a Struct
-Constructors may validate refinements at compile time. Temporal types might restrict when certain fields are valid.
+Instances use brace literals or associated constructors.
 
-Possible syntaxes for creating struct values might include:
-* `let pt = Point { x: 0, y: 1 }` the classic literal form.
-* `let pt = Point(x = 0, y = 1)` using named parameters.
-* `new Point { x=0; y=1 }` explicit construction keyword inspired by C#.
-* `build Point with x <- 0, y <- 1` a builder-like syntax.
-* `pt := Point::create(0, 1)` calling an associated constructor.
+**Syntax**
+```flux
+let pt = Point { x: 0, y: 1 }
+let pt2 = Point::new(0, 1)
+```
+**Reasoning**: avoids special `new` or builder keywords in favour of conventional forms.
 
 ## 12. Accessing Struct Fields
-Field access should be straightforward but also track temporal usage if fields are streams.
+Field access uses dot notation with optional temporal indexing.
 
-Possible syntaxes for field reads and writes might include:
-* `pt.x` standard dot notation for access.
-* `pt["x"]` using string-based indexing for dynamic field names.
-* `pt@next.x = 5` performing a temporal update that takes effect later.
-* `with pt { .x = 2 }` block-based mutation reminiscent of record-update syntax.
-* `pt->x` using an arrow operator similar to C for pointer-like semantics.
+**Syntax**
+```flux
+pt.x
+pt[next].x = 5
+```
+**Reasoning**: arrow operators and update blocks were removed for clarity; temporal writes reuse the indexing syntax from assignments.
 
 ## 13. Declaring an Enum
-Enums allow sum types. Refinements could constrain which variants appear in certain contexts.
+Enums are declared with variant lists and can carry generics.
 
-Possible syntaxes for enum definitions might include:
-* `enum Color { Red, Green, Blue }` the classic closed set of variants.
-* `enum Option<T> { Some(T), None }` demonstrating generics within an enum.
-* `enum Phase @time { Start, Middle, End }` attaching temporal qualifiers to each variant.
-* `enum Result<T, E> = Ok(T) | Err(E)` using a bar-separated shorthand form.
-
+**Syntax**
+```flux
+enum Color { Red, Green, Blue }
+enum Option<T> { Some(T), None }
+enum Result<T, E> { Ok(T), Err(E) }
+```
+**Reasoning**: bar separated and temporal enum forms were removed to keep the declaration style simple.
 
 ## 14. Matching on an Enum
-Matching must exhaustively handle variants, and temporal rules might require handling of end-of-stream cases.
+Matching values is done with the same `match` keyword used earlier.
 
-Possible syntaxes for enum pattern matching might include:
-* `match value { Ok(v) => v, Err(e) => handle(e) }` a direct case split.
-* `case value of Ok(v) -> v | Err(e) -> handle(e)` using a succinct arrow form.
-* `when Ok(v) := value { ... } else { ... }` pattern binding within a condition.
-* `if value is Ok then ... else ...` an `is` keyword reminiscent of Python.
-* `select value { Ok(v): ..., Err(e): ... }` an alternative keyword driven by plugins.
+**Syntax**
+```flux
+match value { Ok(v) => v, Err(e) => handle(e) }
+```
+**Reasoning**: alternatives using `is` or `select` introduced redundant keywords without clear benefit.
 
 ## 15. Using Generics
-Generics interact with the type system's refinements and linearity. Z3 may check generic constraints.
+Generics use angle brackets after the function name.  Bounds appear with `:` and refinements use `where` clauses.
 
-Possible syntaxes for generic type parameters might include:
-* `fn identity<T>(val: T) -> T` the traditional angle-bracket form.
-* `fn<T> identity(val: T) -> T` placing generics before the function name as in C++.
-* `fun identity['a](x: 'a): 'a` an ML-style tick notation.
-* `generic[T: Numeric] fn add(x: T, y: T) -> T` using a leading keyword with trait bounds.
-* `def wrap(val T) -> Box<T>` where the type parameter is implied by a free identifier.
+**Syntax**
+```flux
+fn identity<T>(val: T) -> T
+fn add<T: Numeric>(x: T, y: T) -> T
+```
+**Reasoning**: choosing one placement for generics keeps parsing straightforward and matches common Rust practice.
 
 ## 16. Creating a Reactive Stream
-Core to FluxLang, streams will carry temporal and linear type information. Integration with petgraph IR will model stream graphs.
+Streams can be built from ranges, generators or channels.
 
-Possible syntaxes for declaring and producing streams might include:
-* `stream numbers = 0..n` constructing a stream from a range literal.
-* `let s = stream { yield 1; yield 2 }` a generator block that produces events.
-* `source events := event_source()` wiring up a named input source.
-* `flow x from data { emit x }` a DSL-style declaration for custom flows.
-* `channel<T>()` explicitly creating a typed channel that can be pushed to.
+**Syntax**
+```flux
+stream numbers = 0..n
+let s = stream { yield 1; yield 2 }
+channel<T>()
+```
+**Reasoning**: the custom `flow` form conflicted with the desire to keep streams as first class values.
 
 ## 17. Subscribing to Stream Events
-Consumers of streams must respect temporal sequencing. The compiler might enforce that subscribers handle events in order.
+Consumption of streams uses an async-style `for await` loop or a `subscribe` helper.
 
-Possible syntaxes for listening to streams might include:
-* `subscribe(my_stream, |value| { ... })` registering a closure to run for each event.
-* `on my_stream as value { ... }` using an `on` keyword to bind the value and execute a block.
-* `for await value in my_stream { ... }` drawing from async-style loops to process events sequentially.
-* `when my_stream.emit(value) then { ... }` emphasizing temporal semantics when an event arrives.
+**Syntax**
+```flux
+for await value in my_stream { ... }
+subscribe(my_stream, |value| { ... })
+```
+**Reasoning**: a single keyword based approach is clearer than multiple custom constructs like `on` or `when emit`.
 
 ## 18. Composing Streams
-Operators like map, filter, and merge will use the reactive runtime and may rely on macros for concise expression.
+A pipeline operator expresses common combinators.
 
-Possible syntaxes for stream combinators might include:
-* `mapped = map(f, stream)` a direct function call style.
-* `stream |> map(f) |> filter(g)` chaining operations via a pipeline operator.
-* `stream >> map f >> merge other` using arrow combinators inspired by F#.
-* `stream{ .map(f).filter(g) }` method-chaining reminiscent of JavaScript.
-* `stream1 combine stream2 |> fold(start, f)` creating custom infix operators via plugins.
+**Syntax**
+```flux
+stream |> map(f) |> filter(g)
+```
+**Reasoning**: chaining with `|>` reads left to right and avoids introducing numerous infix variants.
 
 ## 19. Using Refinement Types
-Values can be annotated with logical predicates verified by Z3. Design should make predicates readable but concise.
+Refinement predicates appear in `where` clauses or new type definitions.
 
-Possible syntaxes for refinement annotations on variables and functions might include:
-* `let x: Int where x > 0` an inline `where` clause.
-* `type PosInt = Int { self > 0 }` defining a new refined type.
-* `fn add(a: Int, b: Int) -> Int { result >= a }` using a post-condition block.
-* `let n: Int satisfying n % 2 == 0` natural language style constraints.
-* `val age: Int requiring age >= 18` a keyword-based predicate for clarity.
+**Syntax**
+```flux
+let x: Int where x > 0 = 1
+type PosInt = Int where self > 0
+```
+**Reasoning**: natural language styles were dropped to keep the syntax concise and solver friendly.
 
 ## 20. Using Temporal Types
-Temporal annotations specify when values or streams are valid. This intersects with linear usage tracking.
+Temporal qualifiers reuse the indexing notation and `@` markers.
 
-Possible syntaxes for temporal qualifiers might include:
-* `value@time` attaching an explicit timestamp.
-* `state[next]` indexing the value in the next tick.
-* `Stream<Event> @ phase` annotating the phase at which events occur.
-* `future value` designating a value available only in the future.
-* `value[t + 1]` expressing relative temporal offsets.
+**Syntax**
+```flux
+value@time
+state[next]
+Stream<Event>@phase
+```
+**Reasoning**: a uniform notation reduces confusion compared to keywords like `future`.
 
 ## 21. Importing Modules
-The module system will integrate with the parser and CLI. Plugins might extend import behavior.
+Imports follow Rust-style paths and `export` marks public items.
 
-Possible syntaxes for module imports and exports might include:
-* `import math::trig::{sin, cos}` using Rust-like paths with braces to select
-  specific items.
-* `from math.trig import sin as sine` providing a Python-style selective import
-  with aliasing.
-* `export fn calc()` or `pub fn calc()` to mark functions or values as
-  accessible from other modules.
-* `module utils;` declared at the top of a file to establish the module name and
-  implicitly export its contents.
-* `import plugin::json` loading a compile-time extension that can augment the
-  import system via the plugin architecture.
+**Syntax**
+```flux
+import math::trig::{sin, cos}
+export fn calc()
+```
+**Reasoning**: avoids Python-like `from` and keeps module syntax consistent with the rest of the language.
 
 ## 22. Using Macros
-Macros allow hygienic code generation. They must work well with the LALRPOP-based parser and avoid interfering with refinements.
+Macros use a `macro` keyword with arrow expansion and are invoked with `!` when they behave like functions.
 
-Possible syntaxes for defining and invoking macros might include:
-* `macro_rules! greet { ( $name:expr ) => { print("hi", $name) } }` a Rust-inspired definition.
-* `macro greet(name) => { print("hi {name}") }` using an arrow to expand into code.
-* `define macro inc(x) { x + 1 }` with a keyword-driven style.
-* `@macro json { ... }` attribute-style macros that transform the annotated item.
-* `macro <<pipeline>> { ... }` employing custom delimiters for DSL-like macros.
+**Syntax**
+```flux
+macro greet(name) => { print("hi {name}") }
+greet!("world")
+```
+**Reasoning**: standardising on one definition form simplifies macro tooling.
 
 ## 23. Handling Errors
-Result and Option types may exist with pattern matching. Refinements can express that a function never returns an error in certain cases.
+FluxLang provides `Result` and a `try` block with the `?` operator for propagation.
 
-Possible syntaxes for dealing with errors might include:
-* A `Result<T, E>` type baked into the standard library with pattern matching on
-  `Ok(value)` and `Err(e)` variants.
-* A `try { ... }` block paired with the `?` operator to propagate failures
-  directly from expressions.
-* Stream-aware combinators like `on_error(stream, handler)` that route error
-  values on a reactive channel to a recovery function.
-* Function contracts such as `fn foo() -> !Error` to indicate, via refinement,
-  that a call cannot fail under proven preconditions.
+**Syntax**
+```flux
+try { risky()? }
+```
+**Reasoning**: stream-specific error combinators can be built as library functions; keeping the core syntax minimal helps reasoning about control flow.
 
 ## 24. Resource Management
-Linear types help ensure resources like streams are consumed correctly. The design might borrow from Rust's ownership model.
+Scoped resource blocks and a `defer` statement manage cleanup.
 
-Possible syntaxes for defining and dropping resources might include:
-* `with file = open(path) { ... }` automatically closes when the block ends.
-* `let file = open(path); defer file.close()` mirroring Go's `defer` statement.
-* `use file = File.open(path)` RAII style acquisition.
-* `resource File(path) -> file { ... }` an explicit resource block.
-* `drop file` or `dispose(file)` to release resources manually.
+**Syntax**
+```flux
+with file = open(path) { ... }
+let file = open(path); defer file.close()
+```
+**Reasoning**: these two forms cover common RAII patterns without extra keywords like `resource` or `dispose`.
 
 ## 25. Concurrency and Tasks
-If FluxLang supports async tasks or threads, the interaction with reactive streams and temporal logic becomes important.
+Asynchronous tasks resemble Rust's async model with lightweight spawning.
 
-Possible syntaxes for spawning and managing concurrent tasks might include:
-* `spawn task { ... }` a lightweight syntax for launching asynchronous work.
-* `go { ... }` a minimal keyword inspired by Go.
-* `let handle = async_run(f())` creating a task handle to await later.
-* `parallel for item in items { ... }` parallelized loop semantics.
-* `await join(handle)` waiting for a task to complete.
+**Syntax**
+```flux
+spawn { ... }
+let handle = async_run(f())
+await join(handle)
+```
+**Reasoning**: dropping the `go` keyword and parallel for loops keeps concurrency primitives orthogonal to the rest of the language.
 
 ## 26. Unit Testing and Assertions
 Testing helps validate both semantics and refinement proofs.
@@ -306,4 +292,21 @@ Selected syntax ideas:
 explicit library names. Grouped declarations make large foreign interfaces more
 manageable.
 
+## 28. Defining a Trait
+FluxLang traits describe shared behaviour similar to Rust's traits.
+
+**Syntax**
+```flux
+trait Printable { fn print(self) }
+```
+**Reasoning**: adding traits fills a gap in the original list and provides a foundation for generics and interfaces.
+
+## 29. Implementing a Trait
+Implementations associate trait methods with concrete types.
+
+**Syntax**
+```flux
+impl Printable for Point { fn print(self) { print("({},{})", self.x, self.y) } }
+```
+**Reasoning**: mirrors Rust's `impl` syntax so tooling and developers can easily adapt.
 
