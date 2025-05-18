@@ -1,5 +1,24 @@
 # FluxLang Project Deep Dive
 
+## Table of Contents
+- [Project Goals and Vision](#project-goals-and-vision) - Overview of the project's aims.
+- [Key Technologies and Concepts in FluxLang](#key-technologies-and-concepts-in-fluxlang) - Main language features and tech stack.
+  - [Reactive Streams and Temporal Type System](#reactive-streams-and-temporal-type-system) - FRP-style streams with temporal guarantees.
+  - [Refinement and Dependent Types with SMT Verification](#refinement-and-dependent-types-with-smt-verification) - Using SMT solvers for proofs.
+  - [Hygienic Macros and Plugin Architecture](#hygienic-macros-and-plugin-architecture) - Extensibility via macros.
+  - [Parsing and AST: Rust + LALRPOP](#parsing-and-ast-rust--lalrpop) - Parser infrastructure.
+  - [Intermediate Representation and Optimization (Inkwell & Petgraph)](#intermediate-representation-and-optimization-inkwell--petgraph) - IR and optimizations.
+  - [Backend Code Generation: LLVM, Cranelift, and WebAssembly Targets](#backend-code-generation-llvm-cranelift-and-webassembly-targets) - Multiple compilation targets.
+  - [Command-Line Interface (CLI) and Tooling](#command-line-interface-cli-and-tooling) - CLI utilities and tooling.
+  - [Testing Frameworks: Insta (Snapshot Testing) and QuickCheck (Property Testing)](#testing-frameworks-insta-snapshot-testing-and-quickcheck-property-testing) - Testing approach.
+  - [Language Server Protocol (LSP) Support with Tower-LSP](#language-server-protocol-lsp-support-with-tower-lsp) - Editor integration.
+- [Technical Plan to Initiate the Project](#technical-plan-to-initiate-the-project) - Steps to set up the project.
+  - [Repository Structure and Layout](#repository-structure-and-layout) - Workspace organization.
+  - [Development Environment Setup (Rust on Windows, with Cross-Platform Considerations)](#development-environment-setup-rust-on-windows-with-cross-platform-considerations) - Development environment notes.
+  - [Example Programs Demonstrating Core Concepts](#example-programs-demonstrating-core-concepts) - Sample code.
+  - [Test Suite Setup](#test-suite-setup) - Initial test harness.
+  - [Continuous Integration (CI) Pipeline with GitHub Actions](#continuous-integration-ci-pipeline-with-github-actions) - CI configuration.
+
 ## Project Goals and Vision
 
 FluxLang is envisioned as an experimental programming language and compiler that unifies reactive
