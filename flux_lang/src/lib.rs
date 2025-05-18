@@ -7,17 +7,19 @@ pub mod plugins;
 pub mod semantic;
 pub mod syntax;
 
+use anyhow::{anyhow, Result};
+
 /// Stub compile entry point.
-pub fn compile(source: &str) -> Result<(), String> {
+pub fn compile(source: &str) -> Result<()> {
     compile_with_backend(source, codegen::Backend::Llvm)
 }
 
 /// Compile FluxLang source using the specified backend.
-pub fn compile_with_backend(source: &str, backend: codegen::Backend) -> Result<(), String> {
+pub fn compile_with_backend(source: &str, backend: codegen::Backend) -> Result<()> {
     // Parse source into AST
     let mut ast = syntax::grammar::ProgramParser::new()
         .parse(source)
-        .map_err(|e| format!("parse error: {e}"))?;
+        .map_err(|e| anyhow!("parse error: {e}"))?;
 
     // Expand macros
     macros::expand(&mut ast);
