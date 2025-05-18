@@ -68,7 +68,7 @@ linearity can make the reactive temporal type system feasible and user-friendly 
 Overview: FluxLang’s type system includes refinement types and possibly lightweight dependent
 types, allowing types to be annotated with logical predicates that values must satisfy. For
 example, one might have a type like `Int{v > 0}` meaning “an integer that is positive”, or a
-function type `fn(x: Int) -> Int{result > x}` meaning the function returns a value greater
+function type (in pseudocode) `fn(x: Int) -> Int{result > x}` meaning the function returns a value greater
 than its input. These kinds of annotations enable the compiler to verify safety properties
 (like array index bounds, absence of division by zero, etc.) at compile time – an approach
 inspired by languages such as Liquid Haskell and F* where an SMT solver is used to automatically
@@ -910,74 +910,22 @@ To illustrate FluxLang’s capabilities (even as a prototype) and to serve as re
 we will develop a few minimal example programs. These programs will also act as usage examples
 for new users. We plan to add the following examples in the examples/ directory:
 
-  - Hello World (Basic Syntax): hello.flux – This might be a trivial program that doesn’t involve reactive or advanced types, but simply demonstrates the basic syntax for a program (e.g., a main function, maybe printing to output). Since FluxLang is highly experimental, “Hello World” might not be straightforward if I/O isn’t set up yet – but we can at least illustrate defining a variable and returning a value. For instance:
-
-    ```
-    fn main(): Int {
-        let x: Int = 42;
-        return x;
-    }
-    ```
+  - Hello World (Basic Syntax): `hello.flux` – A trivial program demonstrating the language's most basic constructs. Conceptually, it would define a `main` function that returns a constant value, serving as the equivalent of a "hello world" example.
 
     In early stages, we might execute this in the compiler or REPL and see that it evaluates to 42.
 
-  - Reactive Stream Example: streams.flux – A small program to show reactive stream usage. For
-    example:
+  - Reactive Stream Example: `streams.flux` – Illustrates how a stream of integers might be filtered
+    to only positive values and then accumulated over time. This description is purely conceptual
+    and meant as pseudocode until the language syntax is finalized.
 
-    ```
-    stream sensor: Stream<Int> = getSensorStream();    // imaginary function providing a stream
-    stream posVals: Stream<Int> = sensor.filter(|v| v > 0);
-    // Ensure using linear/temporal types, you cannot reuse sensor after moving it to filter.
-    // Perhaps sum the positive values over time
-    let total: Cell<Int> = 0;
-    posVals.subscribe(|v| { total := total + v });
-    ```
+  - Refinement Type Example: `refinement.flux` – Demonstrates dependent or refinement types by
+    attempting a division operation where the divisor is constrained to be non-zero. Conceptually
+    the compiler should reject calls that violate this constraint, proving that the SMT-backed
+    checker catches simple safety properties like division by zero.
 
-    This pseudo-code demonstrates how one might filter a stream of integers to only positive
-    values and accumulate them. It showcases temporal constraints (you can imagine sensor is no
-    longer valid after the filter, if that’s enforced) and a stream subscription.
-
-  - Refinement Type Example: refinement.flux – Demonstrate dependent/refinement types and proof
-    checking. For instance:
-
-    ```
-    fn safe_divide(x: Int, y: Int{y != 0}): Int {
-        // The type of y ensures at compile time that y is not 0, so division is safe.
-        return x / y;
-    }
-
-    fn main(): Int {
-        let a: Int = 10;
-        let b: Int = 0;
-        // The following line should be a compile-time error, as b does not satisfy b != 0
-        let c: Int = safe_divide(a, b);
-        return 0;
-    }
-    ```
-
-    In this example, we expect the compiler to produce a refinement type error at the call
-    safe_divide(a, b), because b might be 0. The example thus tests that the SMT solver
-    integration is working to catch a simple safety property (division by zero).
-
-  - Probabilistic Programming Example: probabilistic.flux – A simple use of the probabilistic
-    DSL. For example:
-
-    ```
-    fn main(): () {
-        let X ~ Bernoulli(0.5);
-        if (X) {
-            print("Heads");
-        } else {
-            print("Tails");
-        }
-    }
-    ```
-
-    This program defines a random boolean X (which is true with 50% probability). At compile
-    time, not much can be verified about X (except it’s a Bool). But this example will test that
-    the syntax let X ~ Bernoulli(0.5) is recognized and that at runtime, it can produce random
-    outcomes. It also implies having a print or similar, which might be part of a simple
-    runtime library.
+  - Probabilistic Programming Example: `probabilistic.flux` – A conceptual snippet using a
+    Bernoulli distribution to produce a random boolean and print either "Heads" or "Tails". The
+    intent is to show how probabilistic constructs might look once the language is defined.
 
 These examples serve multiple purposes: (a) Documentation – new users can read them to understand
 how to use certain features; (b) Testing – we will incorporate them in tests (e.g., compile
