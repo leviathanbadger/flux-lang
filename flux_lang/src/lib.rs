@@ -14,12 +14,17 @@ pub fn compile(source: &str) -> Result<()> {
     compile_with_backend(source, codegen::Backend::Llvm)
 }
 
+/// Parse FluxLang source into an AST.
+pub fn parse_program(source: &str) -> Result<syntax::ast::Program> {
+    syntax::grammar::ProgramParser::new()
+        .parse(source)
+        .map_err(|e| anyhow!("parse error: {e}"))
+}
+
 /// Compile FluxLang source using the specified backend.
 pub fn compile_with_backend(source: &str, backend: codegen::Backend) -> Result<()> {
     // Parse source into AST
-    let mut ast = syntax::grammar::ProgramParser::new()
-        .parse(source)
-        .map_err(|e| anyhow!("parse error: {e}"))?;
+    let mut ast = parse_program(source)?;
 
     // Expand macros
     macros::expand(&mut ast);
