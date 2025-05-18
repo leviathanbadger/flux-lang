@@ -105,6 +105,10 @@ high-level timeline.
 - Integration with proof assistants (Coq, Lean) for higher-assurance guarantees.
 - Community workshops to gather feedback and foster contributions.
 
+## License
+
+FluxLang is released under the [MIT License](LICENSE).
+
 ---
 
 *This project is purely academic and explores the frontier of programming language design.*
