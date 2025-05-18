@@ -6,62 +6,84 @@ This document lists a set of everyday programming tasks and considers how FluxLa
 ## 1. Logging to the Console
 FluxLang will likely provide a standard library function to output text. Given the project's plan to leverage Rust ecosystems and LLVM for codegen, this might wrap Rust's `println!` or a runtime call. Reactive streams could allow log statements to be triggered by events.
 
-Possible syntaxes for printing values might include:
-* `print("hello")` a straightforward standard library call.
-* `log "value = {x}"` a statement form that expands to a runtime print macro.
-* `debug!(x)` using a macro-style invocation familiar to Rust developers.
-* `emit log(x)` sending the value on a logging stream that listeners can observe.
+Selected syntax ideas:
+* `print("hello")` – a conventional call into the standard library.
+* `log("value = {x}")` – keeps quoting rules uniform while allowing formatted output.
+* `debug!(x)` – macro form for debug‑only logging.
+* `emit log(x)` – treats the log as a stream event for reactive tooling.
+* `trace "msg"` – shorthand for very lightweight messages.
+
+**Reasoning**: the original string‑literal form `log "value = {x}"` used implicit
+parentheses, which would complicate parsing. Converting it to a call form keeps
+syntax regular. A brief `trace` keyword is added to explore a terse logging
+alternative.
 
 
 ## 2. Declaring a Variable
 Variables may carry refinement or temporal annotations. The language might infer types similar to Rust, but also allow specifying refinements checked by Z3.
 
-Possible syntaxes for variable declarations might include:
-* `let count = 0` relying on inference to determine the type.
-* `let id: Int = 42` specifying the primitive type explicitly.
-* `let mut limit: Int [limit > 0] = 10` combining mutability with a refinement predicate.
-* `let events@time: Stream<Event>` introducing a temporal qualifier on the variable.
+Selected syntax ideas:
+* `let count = 0` – inference handles the type.
+* `let id: Int = 42` – explicit type when desired.
+* `let mut limit: Int [limit > 0] = 10` – mutable with a refinement.
+* `let events: Stream<Event> @time` – temporal qualifier comes after the type for consistency.
+* `const PI: Float = 3.1415` – immutable compile‑time constant.
+
+**Reasoning**: the placement of `@time` after the type mirrors how other annotations
+will be parsed and keeps identifiers uncluttered. A constant form is added to
+cover global values.
 
 
 ## 3. Assigning to a Variable
 Assignments must respect linear usage of temporal streams if involved. Basic mutable variables might behave like Rust's `let mut`.
 
-Possible syntaxes for mutation and reassignment might include:
-* `count = count + 1` the basic assignment operator.
-* `count += 1` sugar for arithmetic updates.
-* `next_value -> result` piping a computed value into a variable respecting linear usage.
-* `state@next := update(state)` denoting a temporal update that takes effect at the next tick.
+Selected syntax ideas:
+* `count = count + 1` – basic assignment operator.
+* `count += 1` – shorthand for arithmetic updates.
+* `state@next := update(state)` – temporal update taking effect at the next tick.
+
+**Reasoning**: the pipeline form `next_value -> result` clashes with conventional
+assignment and would introduce an additional operator solely for updates.
+Temporal assignment remains to illustrate delayed state changes.
 
 
 ## 4. Conditional Execution
 An `if` expression must be compatible with refinement types, ensuring branches satisfy constraints. Temporal logic might gate conditions based on event phases.
 
-Possible syntaxes for `if`/`else` constructs might include:
-* `if cond { ... } else { ... }` the classic block form.
-* `when cond do { ... } else { ... }` emphasizing temporal checks.
-* `cond { cond1 => { ... }; _ => { ... } }` inspired by Racket style conditionals.
-* `if cond -> expr1; otherwise -> expr2` using arrow clauses to express branches concisely.
-* `? cond { expr1 } : { expr2 }` a terse conditional expression reminiscent of C's ternary operator.
+Selected syntax ideas:
+* `if cond { ... } else { ... }` – classic block form.
+* `when cond do { ... } else { ... }` – integrates temporal checks.
+* `if cond -> expr1 else expr2` – expression form without extra keywords.
+* `? cond { expr1 } : { expr2 }` – terse operator style for expressions.
+
+**Reasoning**: the Racket‑style `cond` construct overlaps heavily with `match`
+and adds little benefit here, so it has been removed. The arrow clause variant
+was shortened to reduce verbosity while still providing an expression form.
 
 ## 5. Looping Over a Range
 Loops can interact with reactive streams or linear types. The design should ensure iteration variables respect borrow-like rules.
 
-Possible syntaxes for numeric `for` loops might include:
-* `for i in 0..n { ... }` a familiar Rust-style range with implicit type inference.
-* `for i: Int [0 <= i < n] in 0..n { ... }` adding a refinement predicate on `i`.
-* `for t in 0..duration @ cycle { ... }` associating each iteration with a temporal phase.
-* `repeat n times |i| { ... }` using a macro-like form that leverages the plugin system.
-* `for await i in timer(0..n) { ... }` iterating over a stream of time-based events.
+Selected syntax ideas:
+* `for i in 0..n { ... }` – familiar Rust‑style range.
+* `for i: Int [0 <= i < n] in 0..n { ... }` – range with a refinement predicate.
+* `for t in 0..duration @cycle { ... }` – associates iteration with a temporal phase.
+* `for await i in timer(0..n) { ... }` – asynchronous loop over time events.
+
+**Reasoning**: the `repeat n times` macro form felt redundant given the normal
+`for` loop and would overlap with user‑defined macros. The remaining examples
+cover plain, refined, temporal, and async variations.
 
 ## 6. Iterating Through a Collection
 Similar to ranges but using collection APIs. Type inference should work with generics and refinement annotations on elements.
 
-Possible syntaxes for iterating through a collection might include:
-* `for item in collection { ... }` the straightforward `for` loop.
-* `foreach item -> collection { ... }` echoing older BASIC style.
-* `collection.each |item| { ... }` a method-call style inspired by Ruby.
-* `for item <- collection do ...` using a comprehension form similar to Haskell.
-* `loop item of collection { ... }` a free-form keyword that could be enabled by plugins.
+Selected syntax ideas:
+* `for item in collection { ... }` – straightforward loop form.
+* `collection.each |item| { ... }` – method‑call style.
+* `for item <- collection do ...` – Haskell‑like comprehension.
+
+**Reasoning**: the `foreach` and `loop item of` variants diverged significantly
+from the rest of the language style. Keeping the method call and comprehension
+forms demonstrates flexibility while staying readable.
 
 ## 7. Defining a Function
 Functions may include dependent or refinement type signatures and possibly temporal effects. The plan's plugin system could allow custom annotations here.
@@ -259,5 +281,29 @@ Possible syntaxes for spawning and managing concurrent tasks might include:
 * `let handle = async_run(f())` creating a task handle to await later.
 * `parallel for item in items { ... }` parallelized loop semantics.
 * `await join(handle)` waiting for a task to complete.
+
+## 26. Unit Testing and Assertions
+Testing helps validate both semantics and refinement proofs.
+
+Selected syntax ideas:
+* `test "adds numbers" { assert(add(2,2) == 4) }` – lightweight inline test block.
+* `#[test] fn adds() { assert(add(2,2) == 4) }` – Rust‑style attribute test.
+* `spec add_positive(x: Int, y: Int) [x > 0, y > 0] => { add(x, y) > 0 }` – property specification leveraging refinements.
+
+**Reasoning**: providing both block and attribute styles allows quick checks and
+integration with tooling. A specification form illustrates how refinement logic
+can drive property tests.
+
+## 27. Calling Foreign Functions
+Interoperability with existing libraries is essential for adoption.
+
+Selected syntax ideas:
+* `extern fn c_func(arg: Int) -> Int` – direct declaration of an external function.
+* `@ffi("libm") fn sin(x: Float) -> Float` – attribute specifying the foreign library.
+* `link "c" { fn printf(format: *const u8, ...) }` – grouped declarations inside a link block.
+
+**Reasoning**: the FFI syntax mirrors Rust's approach but adds attributes for
+explicit library names. Grouped declarations make large foreign interfaces more
+manageable.
 
 
