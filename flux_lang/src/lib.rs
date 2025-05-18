@@ -1,9 +1,25 @@
 //! Core compiler library for FluxLang.
 
+pub mod codegen;
+pub mod ir;
 pub mod syntax;
+pub mod typeck;
 
 /// Stub compile entry point.
-pub fn compile(_source: &str) -> Result<(), String> {
-    // TODO: implement compilation pipeline
+pub fn compile(source: &str) -> Result<(), String> {
+    // Parse source into AST
+    let ast = syntax::grammar::ProgramParser::new()
+        .parse(source)
+        .map_err(|e| format!("parse error: {e}"))?;
+
+    // Type check
+    typeck::check(&ast)?;
+
+    // Lower to IR and optimize
+    let mut ir = ir::lower(&ast);
+    ir::opt::run_passes(&mut ir);
+
+    // Emit code (placeholder)
+    codegen::emit(&ir)?;
     Ok(())
 }
