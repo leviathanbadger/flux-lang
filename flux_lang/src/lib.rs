@@ -2,8 +2,8 @@
 
 pub mod codegen;
 pub mod ir;
+pub mod semantic;
 pub mod syntax;
-pub mod typeck;
 
 /// Stub compile entry point.
 pub fn compile(source: &str) -> Result<(), String> {
@@ -13,11 +13,11 @@ pub fn compile(source: &str) -> Result<(), String> {
         .map_err(|e| format!("parse error: {e}"))?;
 
     // Type check
-    typeck::check(&ast)?;
+    semantic::check(&ast)?;
 
     // Lower to IR and optimize
     let mut ir = ir::lower(&ast);
-    ir::opt::run_passes(&mut ir);
+    ir::run_passes(&mut ir);
 
     // Emit code (placeholder)
     codegen::emit(&ir)?;
