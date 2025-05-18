@@ -2,15 +2,23 @@
 
 pub mod codegen;
 pub mod ir;
+pub mod macros;
+pub mod plugins;
 pub mod semantic;
 pub mod syntax;
 
 /// Stub compile entry point.
 pub fn compile(source: &str) -> Result<(), String> {
     // Parse source into AST
-    let ast = syntax::grammar::ProgramParser::new()
+    let mut ast = syntax::grammar::ProgramParser::new()
         .parse(source)
         .map_err(|e| format!("parse error: {e}"))?;
+
+    // Expand macros
+    macros::expand(&mut ast);
+
+    // Run registered plugins
+    plugins::run_all(&mut ast);
 
     // Type check
     semantic::check(&ast)?;
