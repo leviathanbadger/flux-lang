@@ -17,6 +17,8 @@ jobs:
         with:
           toolchain: stable
           override: true
-          components: clippy
+          components: clippy,rustfmt
       - name: Clippy Check
         run: cargo clippy --all -- -D warnings
+      - name: Rustfmt Check
+        run: cargo fmt -- --check
