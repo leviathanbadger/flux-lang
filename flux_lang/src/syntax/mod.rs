@@ -1,9 +1,10 @@
 //! Syntax definitions and parser.
 
-use lalrpop_util::lalrpop_mod;
-
 // Include generated parser from build script
-lalrpop_mod!(pub grammar, "/syntax/grammar.rs");
+#[allow(clippy::all)]
+pub mod grammar {
+    include!(concat!(env!("OUT_DIR"), "/syntax/grammar.rs"));
+}
 
 pub mod ast;
 pub mod lexer;

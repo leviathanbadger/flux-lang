@@ -1,23 +1,9 @@
 //! Intermediate representation definitions
 
-use crate::syntax::ast::Program;
-use petgraph::graph::Graph;
+#![allow(clippy::module_inception)]
 
-pub struct IrModule {
-    pub graph: Graph<(), ()>,
-}
+pub mod ir;
+pub mod optimize;
 
-pub fn lower(_program: &Program) -> IrModule {
-    // TODO: implement lowering from AST to IR
-    IrModule {
-        graph: Graph::new(),
-    }
-}
-
-pub mod opt {
-    use super::IrModule;
-
-    pub fn run_passes(_ir: &mut IrModule) {
-        // TODO: implement optimization passes
-    }
-}
+pub use ir::{lower, IrModule};
+pub use optimize::run_passes;
