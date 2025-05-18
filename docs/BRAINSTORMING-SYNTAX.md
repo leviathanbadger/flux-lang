@@ -106,7 +106,17 @@ TODO: Brainstorm syntax for temporal qualifiers.
 ## 21. Importing Modules
 The module system will integrate with the parser and CLI. Plugins might extend import behavior.
 
-TODO: Brainstorm syntax for module imports and exports.
+Possible syntaxes for module imports and exports might include:
+* `import math::trig::{sin, cos}` using Rust-like paths with braces to select
+  specific items.
+* `from math.trig import sin as sine` providing a Python-style selective import
+  with aliasing.
+* `export fn calc()` or `pub fn calc()` to mark functions or values as
+  accessible from other modules.
+* `module utils;` declared at the top of a file to establish the module name and
+  implicitly export its contents.
+* `import plugin::json` loading a compile-time extension that can augment the
+  import system via the plugin architecture.
 
 ## 22. Using Macros
 Macros allow hygienic code generation. They must work well with the LALRPOP-based parser and avoid interfering with refinements.
