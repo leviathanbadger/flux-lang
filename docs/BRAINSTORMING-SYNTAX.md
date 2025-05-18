@@ -56,7 +56,12 @@ TODO: Brainstorm syntax for function calls and generics.
 ## 9. Pattern Matching
 A match expression can destructure enums or stream events. Refinement types might refine matched variants.
 
-TODO: Brainstorm syntax for pattern matching.
+Possible syntaxes for pattern matching might include:
+* `match value { Some(x) => x, None => default }` mirroring Rust's familiar enum patterns.
+* `match event when event.tag == "click" { Click(x, y) => ... }` integrating guards that can leverage refinement predicates.
+* `on stream => match * { Data(d) => handle(d), Error(e) => log(e) }` combining reactive stream events with match arms.
+* `match { variant: V1[a], other } { V1(n) if n > 0 => ... }` allowing inline refinement filters on pattern variables.
+* `case value of { pattern => expr }` using a more ML-style keyword that could be macro-expanded by plugins.
 
 ## 10. Declaring a Struct
 Structs can carry field refinements and may be used in macros. Their definitions will inform the AST structure defined via LALRPOP.
