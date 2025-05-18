@@ -86,7 +86,11 @@ TODO: Brainstorm syntax for declaring and producing streams.
 ## 17. Subscribing to Stream Events
 Consumers of streams must respect temporal sequencing. The compiler might enforce that subscribers handle events in order.
 
-TODO: Brainstorm syntax for listening to streams.
+Possible syntaxes for listening to streams might include:
+* `subscribe(my_stream, |value| { ... })` registering a closure to run for each event.
+* `on my_stream as value { ... }` using an `on` keyword to bind the value and execute a block.
+* `for await value in my_stream { ... }` drawing from async-style loops to process events sequentially.
+* `when my_stream.emit(value) then { ... }` emphasizing temporal semantics when an event arrives.
 
 ## 18. Composing Streams
 Operators like map, filter, and merge will use the reactive runtime and may rely on macros for concise expression.
