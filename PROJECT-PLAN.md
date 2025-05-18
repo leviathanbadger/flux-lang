@@ -685,40 +685,45 @@ Organizing the repository clearly will make the project more maintainable. Below
 folder structure for FluxLang:
 
 ```
-flux-lang/                (Root of the repository, also a Cargo workspace or single crate)
-├── Cargo.toml            (Rust package manifest, including deps like lalrpop, inkwell, etc.)
-├── build.rs              (Build script to trigger LALRPOP parser generation)
-├── src/                  (Source code for the compiler)
-│   ├── main.rs           (Entry point for CLI `fluxc`, uses clap to parse args and calls into lib)
-│   ├── lib.rs            (If designing as a library crate; could contain overall compile function)
-│   ├── syntax/           (Module for parsing and AST)
-│   │   ├── grammar.lalrpop   (FluxLang grammar specification for LALRPOP)
-│   │   ├── ast.rs            (Definitions of AST structs/enums, with Debug, etc.)
-│   │   ├── lexer.rs (optional) (Custom lexer rules if needed, or use lalrpop-util default)
-│   │   └── mod.rs           (Re-exports and parser invocation, lalrpop_mod! macro inclusion)
-│   ├── semantic/         (Module for semantic analysis and type checking)
-│   │   ├── typecheck.rs      (Type checker implementation, uses Z3 via z3 crate)
-│   │   ├── env.rs            (Symbol table, type environments)
-│   │   └── mod.rs
-│   ├── ir/               (Module for IR and optimizations)
-│   │   ├── ir.rs             (Definition of IR structures, possibly using petgraph Graph)
-│   │   ├── optimize.rs       (Implementations of optimization passes)
-│   │   └── mod.rs
-│   ├── codegen/          (Module for code generation backends)
-│   │   ├── llvm.rs           (Using Inkwell to generate LLVM IR and invoke LLVM)
-│   │   ├── cranelift.rs      (Using Cranelift to JIT compile and execute)
-│   │   ├── wasm.rs           (WASM generation, possibly via LLVM or direct)
-│   │   └── mod.rs
-│   ├── cli.rs            (CLI argument definitions using Clap, and logic to handle subcommands)
-│   └── lsp.rs            (LSP server implementation using tower-lsp, if included in same crate)
+flux-lang/                (Root of the repository, a Cargo workspace)
+├── Cargo.toml            (Workspace manifest listing member crates)
+├── flux_lang/            (Library crate containing the compiler core)
+│   ├── Cargo.toml
+│   ├── build.rs          (Build script to trigger LALRPOP parser generation)
+│   └── src/
+│       ├── lib.rs        (Library entry point and overall compile function)
+│       ├── syntax/
+│       │   ├── grammar.lalrpop   (FluxLang grammar specification for LALRPOP)
+│       │   ├── ast.rs            (Definitions of AST structs/enums)
+│       │   ├── lexer.rs          (Optional custom lexer rules)
+│       │   └── mod.rs            (Re-exports and parser invocation)
+│       ├── semantic/
+│       │   ├── typecheck.rs      (Type checker implementation using Z3)
+│       │   ├── env.rs            (Symbol table, type environments)
+│       │   └── mod.rs
+│       ├── ir/
+│       │   ├── ir.rs             (Definition of IR structures)
+│       │   ├── optimize.rs       (Optimization passes)
+│       │   └── mod.rs
+│       ├── codegen/
+│       │   ├── llvm.rs           (LLVM code generation backend)
+│       │   ├── cranelift.rs      (Cranelift JIT backend)
+│       │   ├── wasm.rs           (WASM code generation)
+│       │   └── mod.rs
+├── fluxc/                (Binary crate providing the `fluxc` CLI)
+│   ├── Cargo.toml
+│   └── src/main.rs       (Entry point for the compiler executable)
+├── fluxd/                (Binary crate for the language server)
+│   ├── Cargo.toml
+│   └── src/main.rs
 ├── examples/             (Example FluxLang programs demonstrating core concepts)
-│   ├── hello.flux            (A "Hello, world" or simplest program example)
-│   ├── streams.flux          (Example showcasing a reactive stream usage)
-│   ├── refinement.flux       (Example of refinement types in action)
+│   ├── hello.flux        (A "Hello, world" example)
+│   ├── streams.flux      (Example showcasing a reactive stream usage)
+│   └── refinement.flux   (Example of refinement types in action)
 ├── tests/                (Integration tests)
 │   ├── parser_tests.rs       (Integration tests for the parser, possibly using insta snapshots)
 │   ├── typechecker_tests.rs  (Tests for type checking, error cases etc.)
-│   └── cli_tests.rs          (Tests invoking CLI as subprocess or via main, ensuring it works)
+│   └── cli_tests.rs          (Tests invoking CLI as subprocess or via main)
 ├── benches/              (Optional: benchmarks, e.g., parsing speed for large inputs)
 │   └── compile_bench.rs
 ├── docs/                 (Documentation)
@@ -730,14 +735,7 @@ flux-lang/                (Root of the repository, also a Cargo workspace or sin
         └── ci.yml            (GitHub Actions CI configuration)
 ```
 
-Notes: This structure keeps the project as a single Rust crate to start with (which is simplest).
-As it grows, we might convert it into a Cargo workspace with sub-crates (for example, a library
-crate for the compiler core, a binary crate for CLI, maybe a separate binary for LSP server),
-but initially one crate is fine. The syntax, semantic, ir, codegen modules separate major
-concerns. The examples/ directory will contain FluxLang source files that serve as documentation
-and as test input for the compiler. Rust’s convention will allow running cargo run --example
-hello to perhaps execute an example (though our compiler might not directly execute them yet,
-we can use examples to compile and run manually or via tests).
+Notes: This structure initializes FluxLang as a Cargo workspace from the very beginning. The compiler implementation lives in the `flux_lang` library crate, while `fluxc` and `fluxd` are stubbed binary crates for the command-line compiler and the language server. The syntax, semantic, IR, and codegen modules remain organized under the library crate. The examples directory will contain FluxLang source files used as documentation and test inputs, and we can run them with `cargo run -p fluxc --example ...` or similar.
 
 We include a docs/ folder for design docs, user guides, etc., to encourage good documentation
 from the start (as mentioned in Phase 7 of the plan). The CI configuration is under
@@ -1101,7 +1099,7 @@ to catch cross-platform issues.
       run: cargo test --all --verbose
     ```
 
-    Using --all in case we later have multiple crates in workspace (or we can specify workspace
+    Using --all because the project is a workspace with multiple crates (or specify workspace
     true). We include --verbose to get detailed logs (useful for debugging CI failures).
 
   - Snapshot Management: If a snapshot test fails on CI, that means either an unintended change
