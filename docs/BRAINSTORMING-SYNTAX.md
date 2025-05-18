@@ -26,7 +26,12 @@ TODO: Brainstorm syntax for `if`/`else` constructs.
 ## 5. Looping Over a Range
 Loops can interact with reactive streams or linear types. The design should ensure iteration variables respect borrow-like rules.
 
-TODO: Brainstorm syntax for numeric `for` loops.
+Possible syntaxes for numeric `for` loops might include:
+* `for i in 0..n { ... }` a familiar Rust-style range with implicit type inference.
+* `for i: Int [0 <= i < n] in 0..n { ... }` adding a refinement predicate on `i`.
+* `for t in 0..duration @ cycle { ... }` associating each iteration with a temporal phase.
+* `repeat n times |i| { ... }` using a macro-like form that leverages the plugin system.
+* `for await i in timer(0..n) { ... }` iterating over a stream of time-based events.
 
 ## 6. Iterating Through a Collection
 Similar to ranges but using collection APIs. Type inference should work with generics and refinement annotations on elements.
