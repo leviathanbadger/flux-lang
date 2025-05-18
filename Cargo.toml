@@ -1,0 +1,6 @@
+[workspace]
+members = ["flux_lang", "fluxc", "fluxd"]
+resolver = "2"
+
+[workspace.dev-dependencies]
+assert_cmd = "2.0"

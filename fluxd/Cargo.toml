@@ -1,0 +1,9 @@
+[package]
+name = "fluxd"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+flux_lang = { path = "../flux_lang" }
+tower-lsp = "0.20"
+tokio = { version = "1", features = ["full"] }

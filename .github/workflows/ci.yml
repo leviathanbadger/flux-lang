@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install LLVM and Z3 (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          choco install llvm -y
+          choco install z3 -y
+      - name: Install LLVM and Z3 (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y llvm-dev clang z3
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          components: clippy,rustfmt
+      - name: Build
+        run: cargo build --all --verbose
+      - name: Run Tests
+        run: cargo test --all --verbose
+      - name: Clippy Check
+        run: cargo clippy --all -- -D warnings
+      - name: Rustfmt Check
+        run: cargo fmt --all -- --check
