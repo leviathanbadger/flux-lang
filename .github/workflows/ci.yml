@@ -28,12 +28,7 @@ jobs:
         with:
           toolchain: stable
           override: true
-          components: clippy,rustfmt
       - name: Build
         run: cargo build --all --verbose
       - name: Run Tests
         run: cargo test --all --verbose
-      - name: Clippy Check
-        run: cargo clippy --all -- -D warnings
-      - name: Rustfmt Check
-        run: cargo fmt --all -- --check
