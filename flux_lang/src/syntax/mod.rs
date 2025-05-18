@@ -2,7 +2,8 @@
 
 use lalrpop_util::lalrpop_mod;
 
-lalrpop_mod!(pub grammar); // Generated parser
+// Generated parser from grammar.lalrpop
+lalrpop_mod!(pub grammar, "/syntax/grammar.rs");
 
 pub mod ast;
 pub mod lexer;
