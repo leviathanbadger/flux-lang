@@ -17,7 +17,7 @@ pseudocode rather than actual, runnable programs.
 - **Goal:** Develop a prototype compiler for FluxLang that demonstrates novel language
   features and an extensible optimization pipeline.
 - **Motivation:** Explore new frontiers in language design by combining temporal reactive
-  types, proof-carrying code, and probabilistic DSLs to enable safer, more expressive,
+  types and proof-carrying code to enable safer, more expressive,
   and adaptive software.
 - **Target Audience:** Programming language researchers, compiler engineers, systems
   programmers, and anyone intrigued by cutting-edge language design.
@@ -28,8 +28,6 @@ pseudocode rather than actual, runnable programs.
   event ordering and lifetime using linear and temporal types.
 - **Refinement & Dependent Types:** Express rich invariants and use an embedded SMT solver
   (e.g., Z3) to discharge proof obligations, enabling proof-carrying code.
-- **Probabilistic Programming Constructs:** Built-in DSL for probabilistic models with
-  compile-time inference hooks for static analysis and sampling strategies.
 - **Hygienic Macro & Plugin Architecture:** Extend the compiler with custom compiler passes
   and DSL macros, all while preserving hygiene and type safety.
 
@@ -58,8 +56,7 @@ pseudocode rather than actual, runnable programs.
 
 ### Phase 1: Language Specification (Weeks 1–4)
 - Draft the formal grammar in EBNF and outline core syntactic constructs.
-- Write a language report with motivating examples showcasing reactive streams,
-  refinement types, and probabilistic primitives.
+- Write a language report with motivating examples showcasing reactive streams and refinement types.
 - Establish repository structure, coding guidelines, CI workflow, and contributor docs.
 
 ### Phase 2: Parser & AST Implementation (Weeks 5–8)
@@ -74,8 +71,7 @@ pseudocode rather than actual, runnable programs.
 - Design error reporting with precise diagnostics and suggestion hints.
 
 ### Phase 4: IR Design & Core Optimizations (Weeks 17–24)
-- Design an intermediate representation capturing reactive graphs, effects, and
-  probabilistic nodes.
+- Design an intermediate representation capturing reactive graphs and effects.
 - Build an optimization manager to run standard passes (constant folding, dead code
   elimination, temporal fusion).
 
@@ -96,7 +92,7 @@ pseudocode rather than actual, runnable programs.
 - Prepare user guides, API docs, and tutorials in `docs/`.
 
 ### Phase 8: Research Experiments & Demos (Ongoing)
-- Explore compile-time probabilistic inference and reactive UI demos.
+- Explore reactive UI demos.
 - Benchmark performance against toy and real-world workloads.
 
 ### Future Directions

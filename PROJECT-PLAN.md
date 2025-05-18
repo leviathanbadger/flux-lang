@@ -123,70 +123,6 @@ the invariant, making it more tangible to the programmer. Overall, careful engin
 prior art from languages like F*, Liquid Haskell, and Dafny can guide the integration of SMT-based
 verification so that it’s robust and relatively user-friendly.
 
-### Probabilistic Programming Constructs
-
-Overview: A particularly novel aspect of FluxLang is the inclusion of probabilistic programming
-constructs as built-in language features. This means the language will allow developers to define
-random variables, probability distributions, and model statistical inference problems directly in
-code. For example, one might write something like `let x ~ Normal(0,1);` to denote a random variable
-drawn from a normal distribution, or use language syntax to condition on observations. The goal is
-to have a domain-specific language (DSL) for probabilistic models integrated into FluxLang, with
-the compiler able to perform some analysis or transformation on these models. The README hints at
-“compile-time inference hooks for static analysis and sampling strategies”. In other words, the
-compiler might be able to do some static reasoning about probabilistic code – for instance, detect
-independent sub-expressions, or choose an optimized sampling method – and possibly generate efficient
-inference procedures or even perform certain inference at compile time. This is in line with the trend
-of probabilistic programming languages (PPLs), which allow users to describe complex probabilistic
-models and then automatically handle the process of inference (e.g., computing posterior
-distributions) for those models. Generally, probabilistic programming languages allow modelers to
-specify a stochastic process using syntax resembling standard programming languages, and the runtime
-(or compiler) takes care of interpreting that model, often by invoking generic inference algorithms.
-FluxLang aims to bake some of that into the compile phase for performance or safety.
-
-Challenges: Integrating probabilistic programming raises both semantic and practical challenges.
-Semantically, reasoning about randomness at compile time is tricky – many inferences (like computing
-a distribution’s properties) are intractable in general. The compiler must decide what can be
-done statically (e.g., simple constant-folding of probabilities, detection of conjugate priors that
-allow closed-form solutions, etc.) versus what must be deferred to runtime sampling. There’s also
-a question of type system integration: e.g., what is the type of a random sample? Do we treat a
-`Dist<T>` as a first-class type, or do we implicitly allow any T to be probabilistic? We also must
-avoid making the language unsound; for instance, if one could write
-`if random_bool() then assume(false)` or something pathological, it could break the verifier.
-Moreover, PPL constructs often require a runtime support for sampling and possibly for maintaining
-random state or performing algorithmic tasks like Markov Chain Monte Carlo (MCMC) or variational
-inference. This adds to the runtime complexity of programs compiled by FluxLang. From a tooling
-standpoint, few existing Rust libraries support probabilistic programming out of the box, so
-much of this would be built from scratch or by interfacing with external libraries (like calling
-PyMC3, etc., which is undesirable in a standalone compiler). There’s also the challenge of
-performance: naive sampling can be slow, so the compiler’s “inference hooks” need to ensure they
-generate efficient code (perhaps by leveraging multiple cores or vectorization when possible).
-
-Mitigations: As with the temporal types, a phased approach can mitigate risk. Initially, the
-probabilistic DSL could be limited to simple use cases – for example, allow sampling from a few
-common distributions and perhaps conditioning (via syntax like observe statements) in a
-rudimentary form. Complex inference algorithms (like automatically doing Hamiltonian Monte Carlo)
-can be left as “future work” or handled via libraries. The compiler can perform static analyses
-on probabilistic code to catch obvious issues or optimize: for instance, a static analysis could
-detect if a distribution’s parameters are all known at compile time, in which case it might
-precompute a closed form or a lookup table. Academic work suggests static analysis can optimize
-learning processes or verify properties of probabilistic models– e.g., prove that a certain event
-has zero probability, or simplify a model by pruning irrelevant variables. Implementing a few
-such analyses (like dead code elimination for impossible branches, or algebraic simplification
-of probabilities) could provide immediate benefit. To handle integration with the verification
-side, one strategy is to keep probabilistic effects separate from pure computation – perhaps
-via a monadic or effect type. For example, FluxLang could treat the act of sampling as an effect
-that is not subject to refinement checking (since it’s inherently nondeterministic), while still
-allowing the structure of the probabilistic model to be verified (e.g., ensuring that an observe
-statement is type-correct). On the tooling side, choosing or building a small Rust library for
-random number generation and probability distributions is necessary; crates like rand can provide
-RNG, and we may implement PDF/PMF functions for basic distributions ourselves or use a statistics
-crate. The performance concern can be mitigated by offering both interpretation and compilation:
-perhaps provide a way to compile a probabilistic model to native code for speed (maybe even
-leveraging LLVM’s optimization for heavy numeric code) and to tune the inference algorithm via
-annotations (for example, an annotation to choose sampling vs analytic inference). In summary,
-by limiting scope initially, leveraging static analysis to optimize model code, and clearly
-separating probabilistic computations from the pure functional core (for soundness), FluxLang
-can incrementally add this ambitious feature.
 
 ### Hygienic Macros and Plugin Architecture
 
@@ -322,8 +258,8 @@ and maintainable.
 
 Overview: After parsing and semantic analysis, FluxLang will translate programs into an
 Intermediate Representation (IR) suitable for optimization and code generation. The README
-indicates designing an IR that captures reactive dataflow graphs, effects, and probabilistic
-nodes. Likely, this IR will be a higher-level representation tailored to FluxLang’s needs
+indicates designing an IR that captures reactive dataflow graphs and effects.
+Likely, this IR will be a higher-level representation tailored to FluxLang’s needs
 (as opposed to using LLVM IR directly for analysis). The project plans to use the Rust crate
 Petgraph to help represent and manipulate this IR. Petgraph is a general-purpose graph data
 structure library for Rust, providing data types for graphs (nodes and edges with optional
@@ -347,10 +283,9 @@ Challenges: One challenge is duplicating effort or complexity between having a c
 using LLVM IR. We’ll need to decide how high-level our IR will be. If it’s too high-level or
 drastically different from LLVM IR, we’ll have to write a substantial lowering phase to LLVM IR.
 If it’s too close to LLVM IR, we might question the need for a separate IR at all. The likely
-rationale for a custom IR is to encode reactive and probabilistic concepts which have no direct
-representation in LLVM IR (e.g., an explicit node for a stream merge or a node that represents
-a probabilistic sample). Managing this custom IR in petgraph means we also have to be careful
-with graph algorithms – for example, ensuring no cycles where there shouldn’t be, or handling
+rationale for a custom IR is to encode reactive concepts which have no direct
+representation in LLVM IR (e.g., an explicit node for a stream merge).
+Managing this custom IR in petgraph means we also have to be careful with graph algorithms – for example, ensuring no cycles where there shouldn't be, or handling
 graph transformations in a way that preserves correctness. Petgraph provides the tools but not
 the domain knowledge; we must implement verification of IR invariants ourselves.
 
@@ -780,7 +715,6 @@ flux-lang/                (Root of the repository, also a Cargo workspace or sin
 │   ├── hello.flux            (A "Hello, world" or simplest program example)
 │   ├── streams.flux          (Example showcasing a reactive stream usage)
 │   ├── refinement.flux       (Example of refinement types in action)
-│   └── probabilistic.flux    (Example using a probabilistic construct)
 ├── tests/                (Integration tests)
 │   ├── parser_tests.rs       (Integration tests for the parser, possibly using insta snapshots)
 │   ├── typechecker_tests.rs  (Tests for type checking, error cases etc.)
@@ -922,10 +856,6 @@ for new users. We plan to add the following examples in the examples/ directory:
     attempting a division operation where the divisor is constrained to be non-zero. Conceptually
     the compiler should reject calls that violate this constraint, proving that the SMT-backed
     checker catches simple safety properties like division by zero.
-
-  - Probabilistic Programming Example: `probabilistic.flux` – A conceptual snippet using a
-    Bernoulli distribution to produce a random boolean and print either "Heads" or "Tails". The
-    intent is to show how probabilistic constructs might look once the language is defined.
 
 These examples serve multiple purposes: (a) Documentation – new users can read them to understand
 how to use certain features; (b) Testing – we will incorporate them in tests (e.g., compile
