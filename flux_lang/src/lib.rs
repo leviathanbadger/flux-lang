@@ -9,6 +9,11 @@ pub mod syntax;
 
 /// Stub compile entry point.
 pub fn compile(source: &str) -> Result<(), String> {
+    compile_with_backend(source, codegen::Backend::Llvm)
+}
+
+/// Compile FluxLang source using the specified backend.
+pub fn compile_with_backend(source: &str, backend: codegen::Backend) -> Result<(), String> {
     // Parse source into AST
     let mut ast = syntax::grammar::ProgramParser::new()
         .parse(source)
@@ -29,6 +34,6 @@ pub fn compile(source: &str) -> Result<(), String> {
     ir::run_passes(&mut ir);
 
     // Emit code (placeholder)
-    codegen::emit(&ir)?;
+    codegen::emit_with_backend(&ir, backend)?;
     Ok(())
 }
