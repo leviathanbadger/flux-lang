@@ -17,7 +17,8 @@ pub fn compile(source: &str) -> Result<(), String> {
     // Expand macros
     macros::expand(&mut ast);
 
-    // Run registered plugins
+    // Register and run development plugins
+    plugins::register_default_plugins();
     plugins::run_all(&mut ast);
 
     // Type check
