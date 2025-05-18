@@ -18,6 +18,11 @@ enum Commands {
         #[arg(long, value_enum, default_value = "llvm")]
         backend: BackendOpt,
     },
+    /// Parse a FluxLang file and dump the AST
+    Ast {
+        #[arg(value_name = "FILE")]
+        input: String,
+    },
     /// Interactive REPL (not yet implemented)
     Repl,
 }
@@ -42,6 +47,13 @@ fn main() {
             };
             if let Err(e) = flux_lang::compile_with_backend(&source, backend) {
                 eprintln!("compile error: {e}");
+            }
+        }
+        Commands::Ast { input } => {
+            let source = fs::read_to_string(&input).expect("failed to read input");
+            match flux_lang::parse_program(&source) {
+                Ok(ast) => println!("{ast:#?}"),
+                Err(e) => eprintln!("parse error: {e}"),
             }
         }
         Commands::Repl => {
