@@ -1,3 +1,4 @@
+use anyhow::{Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
 use std::fs;
 
@@ -36,7 +37,7 @@ enum BackendOpt {
     Wasm,
 }
 
-fn main() {
+fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
@@ -45,27 +46,27 @@ fn main() {
             output,
             backend,
         } => {
-            let source = fs::read_to_string(&input).expect("failed to read input");
+            let source = fs::read_to_string(&input)
+                .with_context(|| format!("failed to read input `{}`", input))?;
             let backend = match backend {
                 BackendOpt::Llvm => flux_lang::codegen::Backend::Llvm,
                 BackendOpt::Cranelift => flux_lang::codegen::Backend::Cranelift,
                 BackendOpt::Wasm => flux_lang::codegen::Backend::Wasm,
             };
-            if let Err(e) = flux_lang::compile_with_backend(&source, backend) {
-                eprintln!("compile error: {e}");
-            } else if let Some(path) = output {
+            flux_lang::compile_with_backend(&source, backend).context("compile error")?;
+            if let Some(path) = output {
                 println!("would write output to {path}");
             }
         }
         Commands::Ast { input } => {
-            let source = fs::read_to_string(&input).expect("failed to read input");
-            match flux_lang::parse_program(&source) {
-                Ok(ast) => println!("{ast:#?}"),
-                Err(e) => eprintln!("parse error: {e}"),
-            }
+            let source = fs::read_to_string(&input)
+                .with_context(|| format!("failed to read input `{}`", input))?;
+            let ast = flux_lang::parse_program(&source)?;
+            println!("{ast:#?}");
         }
         Commands::Repl => {
             println!("REPL stub");
         }
     }
+    Ok(())
 }
