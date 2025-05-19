@@ -355,3 +355,82 @@ fn compute() { ... };
 fn step(time: Time) -> Output @ (time + 1) { ... };
 ```
 **Reasoning**: Attributes are a flexible mechanism to express hints and temporal semantics consistently across the language.
+
+## 34. Draft Formal Syntax
+
+The following grammar sketches the core FluxLang syntax in EBNF form. It
+summarises the decisions above and aims to remove obvious ambiguities.
+
+```ebnf
+program      = { item } ;
+item         = function_def
+             | struct_def
+             | enum_def
+             | trait_def
+             | impl_def
+             | const_def
+             | import ;
+
+function_def = "fn" identifier "(" [ param { "," param } ] ")"
+               [ "->" type ] block ;
+param        = identifier ":" type ;
+
+struct_def   = "struct" identifier "{" field { "," field } "}" ;
+field        = identifier ":" type [ where_clause ] ;
+
+enum_def     = "enum" identifier "{" variant { "," variant } "}" ;
+variant      = identifier [ "(" type { "," type } ")" ] ;
+
+trait_def    = "trait" identifier "{" { function_sig } "}" ;
+function_sig = "fn" identifier "(" [ param { "," param } ] ")"
+               [ "->" type ] ";" ;
+
+impl_def     = "impl" identifier "for" type block ;
+const_def    = "const" identifier ":" type "=" expression ";" ;
+import       = "import" path ";" ;
+
+block        = "{" { statement } "}" ;
+statement    = variable_decl
+             | assignment
+             | expression ";"
+             | if_stmt
+             | for_loop
+             | while_loop
+             | match_stmt
+             | return_stmt ;
+
+variable_decl= "let" [ "mut" ] identifier
+               [ ":" type ] [ where_clause ]
+               [ "=" expression ] ";" ;
+assignment   = place "=" expression ";" ;
+place        = identifier
+             | expression "." identifier
+             | expression "[" expression "]" ;
+if_stmt      = "if" expression block [ "else" block ] ;
+for_loop     = "for" identifier "in" expression block ;
+while_loop   = "while" expression block ;
+match_stmt   = "match" expression "{" { match_arm } "}" ;
+match_arm    = pattern "=>" expression ";" ;
+return_stmt  = "return" [ expression ] ";" ;
+
+expression   = literal
+             | identifier
+             | call
+             | lambda
+             | block ;
+call         = identifier "(" [ expression { "," expression } ] ")" ;
+lambda       = "|" [ param { "," param } ] "|" expression ;
+
+type         = path [ "<" type { "," type } ">" ]
+             | type "@" identifier ;
+path         = identifier { "::" identifier } ;
+pattern      = identifier | "_" ;
+where_clause = "where" expression ;
+literal      = integer | string ;
+identifier   = /[a-zA-Z_][a-zA-Z0-9_]*/ ;
+integer      = /[0-9]+/ ;
+string       = '"' { character } '"' ;
+```
+
+This grammar is intentionally small and omits many details (such as operator
+precedence) but provides a starting point for a consistent parser.
