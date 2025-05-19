@@ -434,3 +434,89 @@ string       = '"' { character } '"' ;
 
 This grammar is intentionally small and omits many details (such as operator
 precedence) but provides a starting point for a consistent parser.
+
+## 35. FluxLang Syntax Specification
+
+The following grammar consolidates earlier decisions into a single EBNF that avoids left recursion and clarifies how types and calls compose.  Compared to the earlier draft, the `type` rule is refactored, macro definitions are included, and `place` expressions are simplified.
+
+```ebnf
+program       = { item } ;
+item          = import
+              | const_def
+              | macro_def
+              | function_def
+              | struct_def
+              | enum_def
+              | trait_def
+              | impl_def ;
+
+import        = "import" path ";" ;
+const_def     = "const" identifier ":" type "=" expression ";" ;
+macro_def     = "macro" identifier "(" [ param_list ] ")" "=>" block ";" ;
+
+function_def  = ["async"] "fn" identifier [ generics ] "(" [ param_list ] ")"
+                [ "->" type ] [ where_clause ] block ;
+generics      = "<" identifier { "," identifier } ">" ;
+param_list    = param { "," param } ;
+param         = identifier ":" type ;
+
+struct_def    = "struct" identifier "{" field_list "}" ;
+field_list    = [ field { "," field } ] ;
+field         = identifier ":" type [ where_clause ] ;
+
+enum_def      = "enum" identifier "{" variant_list "}" ;
+variant_list  = [ variant { "," variant } ] ;
+variant       = identifier [ "(" type_list ")" ] ;
+
+trait_def     = "trait" identifier "{" { function_sig } "}" ;
+function_sig  = "fn" identifier "(" [ param_list ] ")" [ "->" type ] ";" ;
+
+impl_def      = "impl" path "for" type block ;
+
+block         = "{" { statement } "}" ;
+statement     = variable_decl
+              | assignment
+              | if_stmt
+              | while_loop
+              | for_loop
+              | match_stmt
+              | return_stmt
+              | expression ";" ;
+
+variable_decl = "let" [ "mut" ] identifier [ ":" type ] [ where_clause ]
+                [ "=" expression ] ";" ;
+assignment    = place "=" expression ";" ;
+place         = identifier { "." identifier | "[" expression "]" } ;
+if_stmt       = "if" expression block [ "else" block ] ;
+while_loop    = "while" expression block ;
+for_loop      = "for" identifier "in" expression block ;
+match_stmt    = "match" expression "{" { match_arm } "}" ;
+match_arm     = pattern "=>" expression ";" ;
+return_stmt   = "return" [ expression ] ";" ;
+
+expression    = literal
+              | lambda
+              | call
+              | variable
+              | block ;
+variable      = identifier ;
+call          = primary "(" [ expression_list ] ")" ;
+primary       = identifier | "(" expression ")" ;
+expression_list = expression { "," expression } ;
+
+lambda        = "|" [ param_list ] "|" expression ;
+
+type          = primary_type [ "@" identifier ] ;
+primary_type  = path [ generics_inst ] ;
+generics_inst = "<" type_list ">" ;
+type_list     = type { "," type } ;
+path          = identifier { "::" identifier } ;
+pattern       = identifier | "_" ;
+where_clause  = "where" expression ;
+literal       = integer | string ;
+identifier    = /[a-zA-Z_][a-zA-Z0-9_]*/ ;
+integer       = /[0-9]+/ ;
+string        = '"' { character } '"' ;
+```
+
+This specification remains provisional but removes ambiguity in the `type` rule and makes function generics explicit.  Future revisions can refine operator precedence and additional expression forms.
