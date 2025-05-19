@@ -8,6 +8,7 @@ pub mod grammar {
 
 pub mod ast;
 pub mod lexer;
+pub mod util;
 
 /// Error returned when parsing source fails.
 #[derive(Debug)]

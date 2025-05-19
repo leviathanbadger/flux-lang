@@ -17,23 +17,6 @@ pub fn compile(source: &str) -> Result<()> {
 
 /// Parse FluxLang source into an AST.
 pub fn parse_program(source: &str) -> Result<syntax::ast::Program> {
-    fn offset_to_line_col(src: &str, offset: usize) -> (usize, usize) {
-        let mut line = 0usize;
-        let mut col = 0usize;
-        for (i, ch) in src.char_indices() {
-            if i == offset {
-                break;
-            }
-            if ch == '\n' {
-                line += 1;
-                col = 0;
-            } else {
-                col += 1;
-            }
-        }
-        (line, col)
-    }
-
     syntax::grammar::ProgramParser::new()
         .parse(source)
         .map_err(|e: LalrpopError<usize, _, _>| {
@@ -54,7 +37,7 @@ pub fn parse_program(source: &str) -> Result<syntax::ast::Program> {
                 ExtraToken { token: (loc, _, _) } => (loc, "extra token".to_string()),
                 User { error } => (0, error.to_string()),
             };
-            let (line, column) = offset_to_line_col(source, offset);
+            let (line, column) = syntax::util::offset_to_line_col(source, offset);
             anyhow!(syntax::ParseError {
                 line,
                 column,
