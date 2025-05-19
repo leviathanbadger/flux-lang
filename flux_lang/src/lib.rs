@@ -52,22 +52,47 @@ pub fn compile_with_backend(source: &str, backend: codegen::Backend) -> Result<(
     let mut ast = parse_program(source)?;
 
     // Expand macros
-    macros::expand(&mut ast);
+    expand_macros(&mut ast)?;
 
     // Register and run development plugins
+    run_plugins(&mut ast)?;
+
+    // Type check
+    type_check(&ast)?;
+
+    // Lower to IR and optimize
+    let ir = lower_and_optimize(&ast)?;
+
+    // Emit code (placeholder)
+    emit_code(&ir, backend)?;
+    Ok(())
+}
+
+fn expand_macros(program: &mut syntax::ast::Program) -> Result<()> {
+    macros::expand(program);
+    Ok(())
+}
+
+fn run_plugins(program: &mut syntax::ast::Program) -> Result<()> {
     if std::env::var_os("FLUX_SKIP_DEFAULT_PLUGINS").is_none() {
         plugins::register_default_plugins();
     }
-    plugins::run_all(&mut ast);
+    plugins::run_all(program);
+    Ok(())
+}
 
-    // Type check
-    semantic::check(&ast)?;
+fn type_check(program: &syntax::ast::Program) -> Result<()> {
+    semantic::check(program)?;
+    Ok(())
+}
 
-    // Lower to IR and optimize
-    let mut ir = ir::lower(&ast);
+fn lower_and_optimize(program: &syntax::ast::Program) -> Result<ir::IrModule> {
+    let mut ir = ir::lower(program);
     ir::run_passes(&mut ir);
+    Ok(ir)
+}
 
-    // Emit code (placeholder)
-    codegen::emit_with_backend(&ir, backend)?;
+fn emit_code(ir: &ir::IrModule, backend: codegen::Backend) -> Result<()> {
+    codegen::emit_with_backend(ir, backend)?;
     Ok(())
 }
