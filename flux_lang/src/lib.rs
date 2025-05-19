@@ -30,7 +30,9 @@ pub fn compile_with_backend(source: &str, backend: codegen::Backend) -> Result<(
     macros::expand(&mut ast);
 
     // Register and run development plugins
-    plugins::register_default_plugins();
+    if std::env::var_os("FLUX_SKIP_DEFAULT_PLUGINS").is_none() {
+        plugins::register_default_plugins();
+    }
     plugins::run_all(&mut ast);
 
     // Type check
