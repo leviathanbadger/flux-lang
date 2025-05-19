@@ -15,6 +15,8 @@ enum Commands {
     Compile {
         #[arg(value_name = "FILE")]
         input: String,
+        #[arg(short, long, value_name = "FILE")]
+        output: Option<String>,
         #[arg(long, value_enum, default_value = "llvm")]
         backend: BackendOpt,
     },
@@ -38,7 +40,11 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Compile { input, backend } => {
+        Commands::Compile {
+            input,
+            output,
+            backend,
+        } => {
             let source = fs::read_to_string(&input).expect("failed to read input");
             let backend = match backend {
                 BackendOpt::Llvm => flux_lang::codegen::Backend::Llvm,
@@ -47,6 +53,8 @@ fn main() {
             };
             if let Err(e) = flux_lang::compile_with_backend(&source, backend) {
                 eprintln!("compile error: {e}");
+            } else if let Some(path) = output {
+                println!("would write output to {path}");
             }
         }
         Commands::Ast { input } => {
