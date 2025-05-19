@@ -37,6 +37,16 @@ enum BackendOpt {
     Wasm,
 }
 
+impl From<BackendOpt> for flux_lang::codegen::Backend {
+    fn from(opt: BackendOpt) -> Self {
+        match opt {
+            BackendOpt::Llvm => flux_lang::codegen::Backend::Llvm,
+            BackendOpt::Cranelift => flux_lang::codegen::Backend::Cranelift,
+            BackendOpt::Wasm => flux_lang::codegen::Backend::Wasm,
+        }
+    }
+}
+
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
@@ -48,12 +58,7 @@ fn main() -> Result<()> {
         } => {
             let source = fs::read_to_string(&input)
                 .with_context(|| format!("failed to read input `{}`", input))?;
-            let backend = match backend {
-                BackendOpt::Llvm => flux_lang::codegen::Backend::Llvm,
-                BackendOpt::Cranelift => flux_lang::codegen::Backend::Cranelift,
-                BackendOpt::Wasm => flux_lang::codegen::Backend::Wasm,
-            };
-            flux_lang::compile_with_backend(&source, backend).context("compile error")?;
+            flux_lang::compile_with_backend(&source, backend.into()).context("compile error")?;
             if let Some(path) = output {
                 println!("would write output to {path}");
             }
