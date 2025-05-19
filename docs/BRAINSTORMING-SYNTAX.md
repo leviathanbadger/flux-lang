@@ -310,3 +310,46 @@ impl Printable for Point { fn print(self) { print("({},{})", self.x, self.y) } }
 ```
 **Reasoning**: mirrors Rust's `impl` syntax so tooling and developers can easily adapt.
 
+
+## 30. Lambda Expressions
+Closures enable concise inline functions.
+
+**Syntax**
+```flux
+let inc = |x| x + 1
+collection.map(|x| x * 2)
+```
+**Reasoning**: Lambdas are commonplace in modern languages and work well with stream combinators.
+
+## 31. Documentation Comments
+Rust-style documentation comments integrate with tooling.
+
+**Syntax**
+```flux
+/// Adds two numbers.
+fn add(x: Int, y: Int) -> Int { x + y }
+```
+**Reasoning**: Keeping docs next to code encourages comprehensive documentation without new keywords.
+
+## 32. Compile-Time Constants
+Constant values are declared with `const`.
+
+**Syntax**
+```flux
+const MAX: Int = 10
+fn array(len: Int = MAX) -> [Int; len]
+```
+**Reasoning**: A clear `const` form avoids using macros for simple constants and enables compile-time evaluation.
+
+## 33. Using Attributes
+Attributes annotate declarations with metadata.
+
+**Syntax**
+```flux
+#[inline]
+fn compute() { ... }
+
+#[temporal(after = tick)]
+fn step(time: Time) -> Output @ (time + 1) { ... }
+```
+**Reasoning**: Attributes are a flexible mechanism to express hints and temporal semantics consistently across the language.
