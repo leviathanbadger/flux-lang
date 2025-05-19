@@ -4,49 +4,33 @@ use tower_lsp::lsp_types::{
 use tower_lsp::{Client, LanguageServer, LspService, Server};
 
 use flux_lang::parse_program;
+use flux_lang::syntax::ParseError;
 
 #[derive(Clone)]
 struct Backend {
     client: Client,
 }
 
-fn extract_offset(msg: &str) -> Option<usize> {
-    msg.rsplit(" at ")
-        .next()
-        .and_then(|s| s.parse::<usize>().ok())
-}
-
-fn offset_to_position(src: &str, offset: usize) -> Position {
-    let mut line = 0u32;
-    let mut col = 0u32;
-    for (i, ch) in src.char_indices() {
-        if i == offset {
-            break;
-        }
-        if ch == '\n' {
-            line += 1;
-            col = 0;
-        } else {
-            col += 1;
-        }
-    }
-    Position::new(line, col)
-}
-
 fn syntax_diagnostics(text: &str) -> Vec<Diagnostic> {
     match parse_program(text) {
         Ok(_) => Vec::new(),
         Err(err) => {
-            let msg = err.to_string();
-            let position = extract_offset(&msg)
-                .map(|o| offset_to_position(text, o))
-                .unwrap_or_else(|| Position::new(0, 0));
-            vec![Diagnostic {
-                range: Range::new(position, position),
-                severity: Some(DiagnosticSeverity::ERROR),
-                message: msg,
-                ..Default::default()
-            }]
+            if let Some(parse_err) = err.downcast_ref::<ParseError>() {
+                let position = Position::new(parse_err.line as u32, parse_err.column as u32);
+                vec![Diagnostic {
+                    range: Range::new(position, position),
+                    severity: Some(DiagnosticSeverity::ERROR),
+                    message: parse_err.message.clone(),
+                    ..Default::default()
+                }]
+            } else {
+                vec![Diagnostic {
+                    range: Range::default(),
+                    severity: Some(DiagnosticSeverity::ERROR),
+                    message: err.to_string(),
+                    ..Default::default()
+                }]
+            }
         }
     }
 }
@@ -91,7 +75,9 @@ mod tests {
     fn diagnostics_error_for_invalid_source() {
         let diags = syntax_diagnostics("1");
         assert_eq!(diags.len(), 1);
-        assert!(diags[0].message.contains("parse error"));
+        assert_eq!(diags[0].message, "invalid token");
+        assert_eq!(diags[0].range.start.line, 0);
+        assert_eq!(diags[0].range.start.character, 0);
     }
 
     #[test]

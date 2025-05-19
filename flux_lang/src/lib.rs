@@ -8,6 +8,7 @@ pub mod semantic;
 pub mod syntax;
 
 use anyhow::{anyhow, Result};
+use lalrpop_util::ParseError as LalrpopError;
 
 /// Stub compile entry point.
 pub fn compile(source: &str) -> Result<()> {
@@ -16,9 +17,50 @@ pub fn compile(source: &str) -> Result<()> {
 
 /// Parse FluxLang source into an AST.
 pub fn parse_program(source: &str) -> Result<syntax::ast::Program> {
+    fn offset_to_line_col(src: &str, offset: usize) -> (usize, usize) {
+        let mut line = 0usize;
+        let mut col = 0usize;
+        for (i, ch) in src.char_indices() {
+            if i == offset {
+                break;
+            }
+            if ch == '\n' {
+                line += 1;
+                col = 0;
+            } else {
+                col += 1;
+            }
+        }
+        (line, col)
+    }
+
     syntax::grammar::ProgramParser::new()
         .parse(source)
-        .map_err(|e| anyhow!("parse error: {e}"))
+        .map_err(|e: LalrpopError<usize, _, _>| {
+            use lalrpop_util::ParseError::*;
+            let (offset, message) = match e {
+                InvalidToken { location } => (location, "invalid token".to_string()),
+                UnrecognizedEof { location, expected } => (
+                    location,
+                    format!("unexpected end of input, expected {}", expected.join(", ")),
+                ),
+                UnrecognizedToken {
+                    token: (loc, _, _),
+                    expected,
+                } => (
+                    loc,
+                    format!("unexpected token, expected {}", expected.join(", ")),
+                ),
+                ExtraToken { token: (loc, _, _) } => (loc, "extra token".to_string()),
+                User { error } => (0, error.to_string()),
+            };
+            let (line, column) = offset_to_line_col(source, offset);
+            anyhow!(syntax::ParseError {
+                line,
+                column,
+                message
+            })
+        })
 }
 
 /// Compile FluxLang source using the specified backend.
