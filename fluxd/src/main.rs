@@ -1,5 +1,6 @@
 use tower_lsp::lsp_types::{
-    Diagnostic, DiagnosticSeverity, DidOpenTextDocumentParams, Position, Range,
+    Diagnostic, DiagnosticSeverity, DidChangeTextDocumentParams, DidOpenTextDocumentParams,
+    Position, Range,
 };
 use tower_lsp::{Client, LanguageServer, LspService, Server};
 
@@ -55,6 +56,16 @@ impl LanguageServer for Backend {
         self.client
             .publish_diagnostics(uri, diagnostics, None)
             .await;
+    }
+
+    async fn did_change(&self, params: DidChangeTextDocumentParams) {
+        let uri = params.text_document.uri;
+        if let Some(change) = params.content_changes.last() {
+            let diagnostics = syntax_diagnostics(&change.text);
+            self.client
+                .publish_diagnostics(uri, diagnostics, None)
+                .await;
+        }
     }
 }
 
