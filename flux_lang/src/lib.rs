@@ -77,7 +77,7 @@ fn run_plugins(program: &mut syntax::ast::Program) -> Result<()> {
     if std::env::var_os("FLUX_SKIP_DEFAULT_PLUGINS").is_none() {
         plugins::register_default_plugins();
     }
-    plugins::run_all(program);
+    plugins::REGISTRY.run_all(program);
     Ok(())
 }
 

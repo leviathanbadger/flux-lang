@@ -1,8 +1,9 @@
 //! Plugin infrastructure for FluxLang.
 //!
-//! Plugins can be registered with [`register`] and executed with [`run_all`].
-//! Tests should call [`clear_plugins`] to remove any previously registered
-//! plugins so state does not leak between test cases.
+//! Plugins can be registered with [`PluginRegistry::register`] and executed with
+//! [`PluginRegistry::run_all`]. Tests should call
+//! [`PluginRegistry::clear`] to remove any previously registered plugins so
+//! state does not leak between test cases.
 
 use crate::syntax::ast::Program;
 use once_cell::sync::Lazy;
@@ -14,27 +15,34 @@ pub trait Plugin: Send + Sync {
 
 pub mod example;
 
-static PLUGINS: Lazy<Mutex<Vec<Box<dyn Plugin>>>> = Lazy::new(|| Mutex::new(Vec::new()));
+/// Registry for development plugins.
+pub struct PluginRegistry(Mutex<Vec<Box<dyn Plugin>>>);
 
-pub fn register(plugin: Box<dyn Plugin>) {
-    PLUGINS.lock().unwrap().push(plugin);
-}
+impl PluginRegistry {
+    /// Register a plugin.
+    pub fn register(&self, plugin: Box<dyn Plugin>) {
+        self.0.lock().unwrap().push(plugin);
+    }
 
-/// Remove all registered plugins.
-///
-/// Mainly used by tests to ensure plugins registered in one test do not
-/// affect others.
-pub fn clear_plugins() {
-    PLUGINS.lock().unwrap().clear();
-}
+    /// Remove all registered plugins.
+    ///
+    /// Mainly used by tests to ensure plugins registered in one test do not
+    /// affect others.
+    pub fn clear(&self) {
+        self.0.lock().unwrap().clear();
+    }
 
-pub fn run_all(program: &mut Program) {
-    for plugin in PLUGINS.lock().unwrap().iter() {
-        plugin.run(program);
+    /// Execute all registered plugins.
+    pub fn run_all(&self, program: &mut Program) {
+        for plugin in self.0.lock().unwrap().iter() {
+            plugin.run(program);
+        }
     }
 }
 
+pub static REGISTRY: Lazy<PluginRegistry> = Lazy::new(|| PluginRegistry(Mutex::new(Vec::new())));
+
 /// Register built-in plugins used during development.
 pub fn register_default_plugins() {
-    register(Box::new(example::DumpAstPlugin));
+    REGISTRY.register(Box::new(example::DumpAstPlugin));
 }

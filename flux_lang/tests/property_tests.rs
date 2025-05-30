@@ -7,7 +7,7 @@ quickcheck! {
     }
 
     fn compile_never_panics(input: String) -> bool {
-        plugins::clear_plugins();
+        plugins::REGISTRY.clear();
         std::panic::catch_unwind(|| {
             let _ = flux_lang::compile(&input);
         })
