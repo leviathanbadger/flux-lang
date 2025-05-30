@@ -75,7 +75,7 @@ pub fn compile_with_backend(source: &str, backend: codegen::Backend) -> Result<(
     if std::env::var_os("FLUX_SKIP_DEFAULT_PLUGINS").is_none() {
         plugins::register_default_plugins();
     }
-    plugins::run_all(&mut ast);
+    plugins::REGISTRY.run_all(&mut ast);
 
     // Type check
     semantic::check(&ast)?;

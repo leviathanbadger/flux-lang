@@ -19,9 +19,9 @@ impl Plugin for CountingPlugin {
 
 #[test]
 fn skip_default_plugins_env() {
-    plugins::clear_plugins();
+    plugins::REGISTRY.clear();
     let counter = Arc::new(AtomicUsize::new(0));
-    plugins::register(Box::new(CountingPlugin(counter.clone())));
+    plugins::REGISTRY.register(Box::new(CountingPlugin(counter.clone())));
     std::env::set_var("FLUX_SKIP_DEFAULT_PLUGINS", "1");
     compile_with_backend("", Backend::Llvm).unwrap();
     std::env::remove_var("FLUX_SKIP_DEFAULT_PLUGINS");
